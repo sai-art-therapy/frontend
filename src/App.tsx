@@ -1,80 +1,69 @@
-import { Chip, type ChipTheme } from "./components/common/Chip";
+import { useState } from "react";
+import { TextField } from "./components/common/TextField";
 
 function App() {
-  const solidThemes: ChipTheme[] = [
-    "solid-light",
-    "solid-dark",
-    "solid-light-active",
-    "solid-dark-active",
-  ];
-  const outlineThemes: ChipTheme[] = [
-    "outline-grey",
-    "outline-primary",
-    "outline-grey-active",
-    "outline-primary-active",
-  ];
+  const [clearableText, setClearableText] = useState("");
+  const [defaultText, setDefaultText] = useState("");
+  const [errorText, setErrorText] = useState("오류가 발생했습니다");
 
   return (
-    <div className="flex flex-col gap-10 bg-white min-h-screen p-8">
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-bold text-grey-800">
-          1. Medium Solid (No Icon / Drop / X)
+    <div className="flex min-h-screen flex-col items-center bg-grey-50 p-10">
+      <div className="flex w-full max-w-[400px] flex-col gap-8 rounded-lg bg-white p-8 shadow-sm">
+        <h2 className="text-title-3 font-bold text-grey-800">
+          TextField 테스트
         </h2>
-        <div className="flex gap-4">
-          {solidThemes.map((theme) => (
-            <Chip key={theme} label="레이블" theme={theme} />
-          ))}
-        </div>
-        <div className="flex gap-4">
-          {solidThemes.map((theme) => (
-            <Chip key={theme} label="레이블" theme={theme} icon="drop" />
-          ))}
-        </div>
-        <div className="flex gap-4">
-          {solidThemes.map((theme) => (
-            <Chip key={theme} label="레이블" theme={theme} icon="x" />
-          ))}
-        </div>
-      </section>
 
-      <hr className="border-grey-200" />
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-body-2 font-semibold text-grey-700">
+              1. Clearable 유형
+            </label>
+            <TextField
+              variant="clearable"
+              placeholder="입력 시 테두리가 검게 변합니다"
+              value={clearableText}
+              onChange={(e) => setClearableText(e.target.value)}
+              onClear={() => setClearableText("")}
+            />
+          </div>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-bold text-grey-800">
-          2. Medium Outline (No Icon / Drop / X)
-        </h2>
-        <div className="flex gap-4">
-          {outlineThemes.map((theme) => (
-            <Chip key={theme} label="레이블" theme={theme} />
-          ))}
-        </div>
-        <div className="flex gap-4">
-          {outlineThemes.map((theme) => (
-            <Chip key={theme} label="레이블" theme={theme} icon="drop" />
-          ))}
-        </div>
-        <div className="flex gap-4">
-          {outlineThemes.map((theme) => (
-            <Chip key={theme} label="레이블" theme={theme} icon="x" />
-          ))}
-        </div>
-      </section>
+          <div className="flex flex-col gap-2">
+            <label className="text-body-2 font-semibold text-grey-700">
+              2. Default 유형
+            </label>
+            <TextField
+              variant="default"
+              placeholder="입력해도 테두리 회색 유지"
+              value={defaultText}
+              onChange={(e) => setDefaultText(e.target.value)}
+            />
+          </div>
 
-      <hr className="border-grey-200" />
+          <div className="flex flex-col gap-2">
+            <label className="text-body-2 font-semibold text-grey-700">
+              3. 에러 상태
+            </label>
+            <TextField
+              isError={true}
+              placeholder="에러 상태"
+              value={errorText}
+              onChange={(e) => setErrorText(e.target.value)}
+            />
+          </div>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-bold text-grey-800">
-          3. Large Solid & Disabled
-        </h2>
-        <div className="flex gap-4">
-          {solidThemes.map((theme) => (
-            <Chip key={theme} label="레이블" theme={theme} size="large" />
-          ))}
+          <div className="flex flex-col gap-2">
+            <label className="text-body-2 font-semibold text-grey-700">
+              4. 비활성화 상태
+            </label>
+            <TextField
+              disabled={true}
+              placeholder="입력할 수 없습니다"
+              value="비활성화된 텍스트"
+              onChange={() => {}}
+            />
+          </div>
         </div>
-        <div className="flex gap-4 mt-2">
-          <Chip label="비활성화" size="large" disabled={true} />
-        </div>
-      </section>
+      </div>
     </div>
   );
 }
