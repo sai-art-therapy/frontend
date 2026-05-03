@@ -1,46 +1,80 @@
-import { useState } from "react";
-import {
-  BottomNavigation,
-  type NavTabId,
-} from "./components/common/BottomNavigation";
-import { TopBar } from "./components/common/TopBar";
+import { Chip, type ChipTheme } from "./components/common/Chip";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<NavTabId>("home");
-
-  const handleTabChange = (tabId: NavTabId) => {
-    setActiveTab(tabId);
-    console.log(`${tabId} 탭으로 이동`);
-  };
+  const solidThemes: ChipTheme[] = [
+    "solid-light",
+    "solid-dark",
+    "solid-light-active",
+    "solid-dark-active",
+  ];
+  const outlineThemes: ChipTheme[] = [
+    "outline-grey",
+    "outline-primary",
+    "outline-grey-active",
+    "outline-primary-active",
+  ];
 
   return (
-    <div className="flex justify-center min-h-screen bg-gray-100 p-4">
-      <div className="w-[402px] bg-white shadow-xl flex flex-col relative overflow-hidden rounded-lg">
-        <TopBar title="GDAM" variant="search" />
-
-        <main className="flex-1 p-6 flex items-center justify-center flex-col gap-4 text-grey-600">
-          {activeTab === "home" && (
-            <h2 className="text-e-title-1 text-main-500">홈 화면</h2>
-          )}
-          {activeTab === "test" && (
-            <h2 className="text-e-title-1 text-success-500">심리 검사 목록</h2>
-          )}
-          {activeTab === "mypage" && (
-            <h2 className="text-e-title-1 text-sub-500">마이페이지</h2>
-          )}
-          <p className="text-body-2">
-            현재 선택된 탭:{" "}
-            <span className="font-bold text-grey-900">{activeTab}</span>
-          </p>
-        </main>
-
-        <div className="sticky bottom-0">
-          <BottomNavigation
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-          />
+    <div className="flex flex-col gap-10 bg-white min-h-screen p-8">
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-bold text-grey-800">
+          1. Medium Solid (No Icon / Drop / X)
+        </h2>
+        <div className="flex gap-4">
+          {solidThemes.map((theme) => (
+            <Chip key={theme} label="레이블" theme={theme} />
+          ))}
         </div>
-      </div>
+        <div className="flex gap-4">
+          {solidThemes.map((theme) => (
+            <Chip key={theme} label="레이블" theme={theme} icon="drop" />
+          ))}
+        </div>
+        <div className="flex gap-4">
+          {solidThemes.map((theme) => (
+            <Chip key={theme} label="레이블" theme={theme} icon="x" />
+          ))}
+        </div>
+      </section>
+
+      <hr className="border-grey-200" />
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-bold text-grey-800">
+          2. Medium Outline (No Icon / Drop / X)
+        </h2>
+        <div className="flex gap-4">
+          {outlineThemes.map((theme) => (
+            <Chip key={theme} label="레이블" theme={theme} />
+          ))}
+        </div>
+        <div className="flex gap-4">
+          {outlineThemes.map((theme) => (
+            <Chip key={theme} label="레이블" theme={theme} icon="drop" />
+          ))}
+        </div>
+        <div className="flex gap-4">
+          {outlineThemes.map((theme) => (
+            <Chip key={theme} label="레이블" theme={theme} icon="x" />
+          ))}
+        </div>
+      </section>
+
+      <hr className="border-grey-200" />
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-bold text-grey-800">
+          3. Large Solid & Disabled
+        </h2>
+        <div className="flex gap-4">
+          {solidThemes.map((theme) => (
+            <Chip key={theme} label="레이블" theme={theme} size="large" />
+          ))}
+        </div>
+        <div className="flex gap-4 mt-2">
+          <Chip label="비활성화" size="large" disabled={true} />
+        </div>
+      </section>
     </div>
   );
 }
