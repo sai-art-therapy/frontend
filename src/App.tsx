@@ -1,18 +1,21 @@
-import { Tag } from "./components/common/Tag";
+// src/App.tsx
+import { TopBar } from "./components/common/TopBar";
 
 function App() {
   return (
-    <div className="flex gap-2 p-4">
-      <Tag variant="soft" color="orange" size="lg">
-        레이블
-      </Tag>
-      <Tag variant="outline" color="red" size="md">
-        레이블
-      </Tag>
-      <Tag variant="solid" color="blue" size="sm">
-        레이블
-      </Tag>
+    <div className="flex flex-col bg-white min-h-screen">
+      <TopBar variant="search" title="Text" />
+      <div className="h-10" />
+      <TopBar variant="action" title="Text" rightText="Text" />
+      <div className="h-10" />
+      <TopBar
+        variant="action"
+        title="Text"
+        rightText="Text"
+        isActionDisabled={true}
+      />
     </div>
   );
 }
+
 export default App;
