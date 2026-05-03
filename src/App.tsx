@@ -1,26 +1,52 @@
+import { ActionButton } from "./components/common/ActionButton";
+
 function App() {
   return (
-    <div className="p-side bg-white min-h-screen">
-      <h1 className="text-e-large-title text-main-500">GDAM 디자인 시스템</h1>
-      <p className="text-body-1 text-grey-700 mt-4">
-        시스템이 잘 적용되었습니다. 양 옆 간격은 16px(side)입니다.
-      </p>
+    <div className="p-8 space-y-6 bg-white min-h-screen">
+      <h1 className="text-large-title text-main-500 mb-8">
+        Button Component Test
+      </h1>
 
-      <div className="mt-8 space-y-4">
-        <div className="text-e-title-3 text-sub-600">Typography Test:</div>
-        <p className="text-large-title">Basic Large Title (34px)</p>
-        <p className="text-e-large-title">
-          Emphasized Large Title (34px, Bold)
-        </p>
-        <p className="text-caption-1 text-error-500">
-          에러 메시지 예시 (Caption 1)
-        </p>
+      {/* 1. 다양한 사이즈 테스트 */}
+      <div className="flex items-end gap-4">
+        <ActionButton size="xl" variant="darkGrey">
+          Button
+        </ActionButton>
+        <ActionButton size="lg" variant="darkGrey">
+          Button
+        </ActionButton>
+        <ActionButton size="md" variant="darkGrey">
+          Button
+        </ActionButton>
+        <ActionButton size="sm" variant="darkGrey">
+          Button
+        </ActionButton>
       </div>
 
-      <button className="mt-safe-bottom bg-main-500 text-white px-6 py-2 rounded-md">
-        공통 버튼 예시 (Radius 12px)
-      </button>
+      {/* 2. 다양한 색상 테스트 (오렌지 계열) */}
+      <div className="flex gap-4">
+        <ActionButton size="md" variant="orange">
+          Button
+        </ActionButton>
+        <ActionButton size="md" variant="mediumOrange">
+          Button
+        </ActionButton>
+        <ActionButton size="md" variant="lightOrange">
+          Button
+        </ActionButton>
+      </div>
+
+      {/* 3. 비활성화(Disabled) 테스트 & 아이콘 없는 버전 */}
+      <div className="flex gap-4">
+        <ActionButton size="lg" variant="orange" disabled>
+          Disabled Button
+        </ActionButton>
+        <ActionButton size="lg" variant="mediumGreen" showIcon={false}>
+          No Icon
+        </ActionButton>
+      </div>
     </div>
   );
 }
+
 export default App;
