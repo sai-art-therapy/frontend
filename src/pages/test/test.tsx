@@ -1,9 +1,12 @@
 import React from "react";
-import { ActionButton } from "../components/common/ActionButton";
-import lovelyIcon from "../assets/icons/home/lovely.svg";
-import clipboardCloseIcon from "../assets/icons/home/clipboard-close.svg";
+import { useNavigate } from "react-router-dom";
+import { ActionButton } from "../../components/common/ActionButton";
+import lovelyIcon from "../../assets/icons/test/lovely.svg";
+import clipboardCloseIcon from "../../assets/icons/test/clipboard-close.svg";
 
 const Test = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="w-full bg-white font-sans">
       <div className="flex w-full items-center justify-center gap-[154px] px-[24px] pb-[19px] pt-[21px]">
@@ -53,6 +56,7 @@ const Test = () => {
             size="md"
             showIcon={false}
             className="w-full"
+            onClick={() => navigate("/test-start")}
           >
             시작하기
           </ActionButton>
