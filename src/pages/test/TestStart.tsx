@@ -128,6 +128,7 @@ const TestStart = () => {
           disabled={!isConsented}
           className="w-full"
           showIcon={false}
+          onClick={() => navigate("/test-first-step")}
         >
           검사 시작하기
         </ActionButton>

@@ -3,9 +3,8 @@ import RootLayout from "../layout/RootLayout";
 import NavigationLayout from "../layout/NavigationLayout";
 
 import HomePage from "../pages/test/test";
-// 💡 추가된 부분 1: TestStart 페이지 컴포넌트를 불러옵니다.
-// (경로가 src/pages/TestStart.tsx에 있다면 아래 경로가 맞습니다)
 import TestStart from "../pages/test/TestStart";
+import TestFirstStep from "../pages/test/TestFirstStep";
 
 export const router = createBrowserRouter([
   {
@@ -16,10 +15,13 @@ export const router = createBrowserRouter([
         path: "/",
         element: <Navigate to="/test" replace />,
       },
-      // 💡 추가된 부분 2: 하단 탭바(NavigationLayout)가 없는 독립된 페이지로 등록합니다.
       {
         path: "/test-start",
         element: <TestStart />,
+      },
+      {
+        path: "/test-first-step",
+        element: <TestFirstStep />,
       },
       {
         element: <NavigationLayout />,
