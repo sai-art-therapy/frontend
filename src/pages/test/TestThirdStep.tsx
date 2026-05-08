@@ -169,9 +169,9 @@ const TestThirdStep = () => {
           showIcon={false}
           onClick={() => {
             if (selectedOption === "camera") {
-              navigate("/test-camera-upload");
+              navigate("/test-loading-step"); //test-camera-upload 으로 수정 예정
             } else {
-              navigate("/test-album-upload");
+              navigate("/test-loading-step"); //test-album-upload 으로 수정 예정
             }
           }}
         >
