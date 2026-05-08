@@ -5,6 +5,7 @@ import NavigationLayout from "../layout/NavigationLayout";
 import HomePage from "../pages/test/test";
 import TestStart from "../pages/test/TestStart";
 import TestFirstStep from "../pages/test/TestFirstStep";
+import TestSecondStep from "../pages/test/TestSecondStep";
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +23,10 @@ export const router = createBrowserRouter([
       {
         path: "/test-first-step",
         element: <TestFirstStep />,
+      },
+      {
+        path: "/test-second-step",
+        element: <TestSecondStep />,
       },
       {
         element: <NavigationLayout />,

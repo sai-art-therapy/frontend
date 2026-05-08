@@ -25,35 +25,31 @@ const TestFirstStep = () => {
   const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
 
   return (
-    <div className="flex w-full flex-col bg-white font-sans pb-[100px]">
-      {/* 상단 상태바 */}
+    <div className="flex w-full flex-col bg-white font-sans min-h-screen">
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-[15px] font-semibold text-black tracking-[-0.24px]">
-          9:41
-        </span>
+        <span className="text-subheadline font-semibold text-black">9:41</span>
         <div className="flex items-center gap-[5px]">
-          <div className="h-[10px] w-[17px] rounded-sm bg-black"></div>
-          <div className="h-[11px] w-[15px] rounded-sm bg-black"></div>
-          <div className="h-[11px] w-[24px] rounded-sm bg-black"></div>
+          <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
+          <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
+          <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
         </div>
       </div>
 
-      {/*헤더 영역 */}
-      <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-[16px] py-[20px]">
+      <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-side py-[20px]">
         <img
           src={returnIcon}
           alt="뒤로가기"
           onClick={() => navigate(-1)}
           className="h-[14px] w-[14px] cursor-pointer"
         />
-        <h1 className="text-[18px] font-bold text-[#202939]">미술 심리 검사</h1>
+        <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
       </div>
 
-      <main className="flex flex-col px-[16px]">
-        <div className="mt-[10px] flex w-full max-w-[370px] items-center gap-[16px]">
-          <div className="h-[5px] flex-1 rounded-full bg-[#FF6229]"></div>
-          <div className="h-[5px] flex-1 rounded-full bg-[#DDE1E9]"></div>
-          <div className="h-[5px] flex-1 rounded-full bg-[#DDE1E9]"></div>
+      <main className="flex flex-col px-side pb-[120px]">
+        <div className="mt-[10px] flex w-full items-center gap-[16px]">
+          <div className="h-[5px] flex-1 rounded-full bg-main-500"></div>
+          <div className="h-[5px] flex-1 rounded-full bg-grey-200"></div>
+          <div className="h-[5px] flex-1 rounded-full bg-grey-200"></div>
         </div>
 
         <img
@@ -63,10 +59,10 @@ const TestFirstStep = () => {
         />
 
         <div className="mt-[8px] flex flex-col">
-          <h2 className="text-[24px] font-bold leading-[34px] tracking-[0.36px] text-[#202939]">
+          <h2 className="text-e-title-1 text-grey-900">
             누구의 마음을 들여다볼까요?
           </h2>
-          <p className="mt-[4px] text-[17px] font-normal leading-[22px] tracking-[-0.41px] text-[#697586]">
+          <p className="mt-[4px] text-body-1 text-grey-600">
             검사할 아이를 선택해주세요
           </p>
         </div>
@@ -79,14 +75,14 @@ const TestFirstStep = () => {
               <div
                 key={child.id}
                 onClick={() => setSelectedChildId(child.id)}
-                className={`flex w-full max-w-[370px] cursor-pointer items-center justify-between rounded-[12px] border p-[12px_16px] transition-colors duration-200 ${
+                className={`flex w-full cursor-pointer items-center justify-between rounded-md border p-[12px_16px] transition-colors duration-200 ${
                   isSelected
-                    ? "border-[#FF6229] bg-white"
-                    : "border-[#DDE1E9] bg-white"
+                    ? "border-main-500 bg-white"
+                    : "border-grey-200 bg-white"
                 }`}
               >
                 <div className="flex items-center gap-[10px]">
-                  <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[1000px] bg-[#F7F8FA] p-[14px]">
+                  <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-grey-50 p-[14px]">
                     <img
                       src={boyImg}
                       alt="아이 프로필"
@@ -94,10 +90,10 @@ const TestFirstStep = () => {
                     />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-black">
+                    <span className="text-e-body-1 text-black">
                       {child.name}
                     </span>
-                    <span className="text-[15px] font-normal leading-[20px] tracking-[-0.24px] text-[#4B5565]">
+                    <span className="text-subheadline text-grey-700">
                       만 {child.age}세 ・ {child.gender} ・ 검사{" "}
                       {child.testCount}회
                     </span>
@@ -116,13 +112,21 @@ const TestFirstStep = () => {
                     cx="9.5"
                     cy="9.5"
                     r="8.5"
-                    fill={isSelected ? "#FF6229" : "none"}
-                    stroke={isSelected ? "#FF6229" : "#DDE1E9"}
+                    fill={isSelected ? "var(--color-main-500)" : "none"}
+                    stroke={
+                      isSelected
+                        ? "var(--color-main-500)"
+                        : "var(--color-grey-200)"
+                    }
                     strokeWidth="1.5"
                   />
                   <path
                     d="M6 9.5L8.5 12L13 7"
-                    stroke={isSelected ? "white" : "#DDE1E9"}
+                    stroke={
+                      isSelected
+                        ? "var(--color-white)"
+                        : "var(--color-grey-200)"
+                    }
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -133,28 +137,29 @@ const TestFirstStep = () => {
           })}
         </div>
 
-        <div className="mt-[24px] flex w-full max-w-[370px] items-center gap-[10px] rounded-[8px] bg-[#FFF7E0] p-[8px]">
+        <div className="mt-[24px] mb-[32px] flex w-full items-center gap-[10px] rounded-sm bg-warning-100 p-[12px]">
           <img
             src={referIcon}
             alt="참고"
-            className="h-[24px] w-[24px] shrink-0"
+            className="h-spacing-icon-sm w-spacing-icon-sm shrink-0"
           />
-          <p className="text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-[#202939]">
+          <p className="text-footnote text-grey-900">
             아이 정보는 분석과 리포트에만 활용되며, 안전하게 보관돼요.
           </p>
         </div>
       </main>
 
-      {/* 하단 고정 버튼 영역 */}
-      <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-[16px] pb-[32px] pt-[16px]">
+      <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-side pb-[32px] pt-[16px]">
         <ActionButton
           variant="darkGrey"
           disabled={selectedChildId === null}
           className="w-full"
           showIcon={false}
-          onClick={() =>
-            console.log(`${selectedChildId}번 아이 선택됨, 다음 페이지로 이동!`)
-          }
+          onClick={() => {
+            navigate("/test-second-step", {
+              state: { childId: selectedChildId },
+            });
+          }}
         >
           다음
         </ActionButton>
