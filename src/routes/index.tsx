@@ -6,6 +6,7 @@ import HomePage from "../pages/test/test";
 import TestStart from "../pages/test/TestStart";
 import TestFirstStep from "../pages/test/TestFirstStep";
 import TestSecondStep from "../pages/test/TestSecondStep";
+import TestThirdStep from "../pages/test/TestThirdStep";
 
 export const router = createBrowserRouter([
   {
@@ -27,6 +28,10 @@ export const router = createBrowserRouter([
       {
         path: "/test-second-step",
         element: <TestSecondStep />,
+      },
+      {
+        path: "/test-third-step",
+        element: <TestThirdStep />,
       },
       {
         element: <NavigationLayout />,
