@@ -1,0 +1,65 @@
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import RootLayout from "../layout/RootLayout";
+import NavigationLayout from "../layout/NavigationLayout";
+
+import HomePage from "../pages/test/test";
+import TestStart from "../pages/test/TestStart";
+import TestFirstStep from "../pages/test/TestFirstStep";
+import TestSecondStep from "../pages/test/TestSecondStep";
+import TestThirdStep from "../pages/test/TestThirdStep";
+import TestLoadingStep from "../pages/test/TestLoadingStep";
+import TestResult from "../pages/test/TestResult";
+
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [
+      {
+        path: "/",
+        element: <Navigate to="/test" replace />,
+      },
+      {
+        path: "/test-start",
+        element: <TestStart />,
+      },
+      {
+        path: "/test-first-step",
+        element: <TestFirstStep />,
+      },
+      {
+        path: "/test-second-step",
+        element: <TestSecondStep />,
+      },
+      {
+        path: "/test-third-step",
+        element: <TestThirdStep />,
+      },
+      {
+        path: "/test-loading-step",
+        element: <TestLoadingStep />,
+      },
+      {
+        path: "/test-result",
+        element: <TestResult />,
+      },
+      {
+        element: <NavigationLayout />,
+        children: [
+          {
+            path: "/home",
+            element: <div>홈 페이지 (준비중)</div>,
+          },
+          {
+            path: "/test",
+            element: <HomePage />,
+          },
+          {
+            path: "/mypage",
+            element: <div>마이페이지 (준비중)</div>,
+          },
+        ],
+      },
+    ],
+  },
+]);

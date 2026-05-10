@@ -74,7 +74,7 @@ export const ActionButton = React.forwardRef<
     ref,
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center gap-[6px] transition-colors disabled:bg-grey-100 disabled:text-grey-300 disabled:cursor-not-allowed";
+      "inline-flex cursor-pointer items-center justify-center gap-[6px] transition-colors disabled:bg-grey-100 disabled:text-grey-300 disabled:cursor-not-allowed";
 
     return (
       <button
