@@ -10,6 +10,8 @@ import TestThirdStep from "../pages/test/TestThirdStep";
 import TestLoadingStep from "../pages/test/TestLoadingStep";
 import TestResult from "../pages/test/TestResult";
 
+import MyPage from "../pages/MyPage/MyPage";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -56,7 +58,7 @@ export const router = createBrowserRouter([
           },
           {
             path: "/mypage",
-            element: <div>마이페이지 (준비중)</div>,
+            element: <MyPage />,
           },
         ],
       },
