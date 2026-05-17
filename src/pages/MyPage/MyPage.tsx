@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { TopBar } from "../../components/common/TopBar";
+import { Popup } from "../../components/common/Popup";
 
 import boyImg from "../../assets/icons/test/boy.png";
 import pencilIcon from "../../assets/icons/Mypage/pencil.svg";
@@ -22,9 +23,11 @@ const mockUserData = {
 const MyPage = () => {
   const navigate = useNavigate();
 
+  const [isLogoutPopupOpen, setIsLogoutPopupOpen] = useState(false);
+  const [isWithdrawPopupOpen, setIsWithdrawPopupOpen] = useState(false);
+
   return (
-    <div className="flex min-h-screen w-full flex-col bg-white font-sans pb-[80px]">
-      {/* 상태바 영역 */}
+    <div className="flex min-h-screen w-full flex-col bg-white font-sans pb-[80px] relative">
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
         <span className="text-subheadline font-semibold text-black">9:41</span>
         <div className="flex items-center gap-[5px]">
@@ -195,7 +198,10 @@ const MyPage = () => {
 
           <div className="flex w-full flex-col gap-[24px]">
             {/* 로그아웃 */}
-            <div className="flex w-full cursor-pointer items-center justify-between active:opacity-70">
+            <div
+              onClick={() => setIsLogoutPopupOpen(true)}
+              className="flex w-full cursor-pointer items-center justify-between active:opacity-70"
+            >
               <div className="flex items-center gap-[8px]">
                 <img
                   src={logoutIcon}
@@ -214,7 +220,10 @@ const MyPage = () => {
             </div>
 
             {/* 탈퇴하기 */}
-            <div className="flex w-full cursor-pointer items-center justify-between active:opacity-70">
+            <div
+              onClick={() => setIsWithdrawPopupOpen(true)}
+              className="flex w-full cursor-pointer items-center justify-between active:opacity-70"
+            >
               <div className="flex items-center gap-[8px]">
                 <img
                   src={withdrawIcon}
@@ -234,6 +243,56 @@ const MyPage = () => {
           </div>
         </div>
       </main>
+
+      {/* 로그아웃 팝업 오버레이 */}
+      {isLogoutPopupOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-[24px]">
+          <Popup
+            title="로그아웃"
+            subtitle="정말 로그아웃을 하시겠습니까?"
+            buttons={[
+              {
+                label: "취소",
+                theme: "light",
+                onClick: () => setIsLogoutPopupOpen(false),
+              },
+              {
+                label: "로그아웃",
+                theme: "error",
+                onClick: () => {
+                  console.log("로그아웃 실행");
+                  setIsLogoutPopupOpen(false);
+                },
+              },
+            ]}
+          />
+        </div>
+      )}
+
+      {/* 계정 탈퇴 팝업 오버레이 */}
+      {isWithdrawPopupOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-[24px]">
+          <Popup
+            title="계정 탈퇴"
+            subtitle="모든 데이터가 영구적으로 삭제됩니다. 정말 탈퇴하시겠습니까?"
+            buttons={[
+              {
+                label: "취소",
+                theme: "light",
+                onClick: () => setIsWithdrawPopupOpen(false),
+              },
+              {
+                label: "탈퇴하기",
+                theme: "error",
+                onClick: () => {
+                  console.log("탈퇴 실행");
+                  setIsWithdrawPopupOpen(false);
+                },
+              },
+            ]}
+          />
+        </div>
+      )}
     </div>
   );
 };
