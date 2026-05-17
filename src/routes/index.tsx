@@ -11,6 +11,7 @@ import TestLoadingStep from "../pages/test/TestLoadingStep";
 import TestResult from "../pages/test/TestResult";
 
 import MyPage from "../pages/MyPage/MyPage";
+import ProfileEditPage from "../pages/MyPage/ProfileEditPage";
 
 export const router = createBrowserRouter([
   {
@@ -59,6 +60,10 @@ export const router = createBrowserRouter([
           {
             path: "/mypage",
             element: <MyPage />,
+          },
+          {
+            path: "/profile/edit",
+            element: <ProfileEditPage />,
           },
         ],
       },

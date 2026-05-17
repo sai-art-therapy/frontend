@@ -11,6 +11,7 @@ import questionIcon from "../../assets/icons/Mypage/question.svg";
 import informationIcon from "../../assets/icons/Mypage/information.svg";
 import logoutIcon from "../../assets/icons/Mypage/logout.svg";
 import withdrawIcon from "../../assets/icons/Mypage/withdraw.svg";
+import momImg from "../../assets/icons/Mypage/mom.png";
 
 const mockUserData = {
   userName: "김성신",
@@ -45,7 +46,7 @@ const MyPage = () => {
           <div className="flex items-center gap-[16px]">
             <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-white p-[14px]">
               <img
-                src={boyImg}
+                src={momImg}
                 alt="프로필"
                 className="h-full w-full object-cover"
               />
