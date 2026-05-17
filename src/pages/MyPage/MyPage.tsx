@@ -132,7 +132,10 @@ const MyPage = () => {
 
           <div className="flex w-full flex-col gap-[28px]">
             {/* 사용 가이드 */}
-            <div className="flex w-full cursor-pointer items-center justify-between active:opacity-70">
+            <div
+              onClick={() => navigate("/guide")}
+              className="flex w-full cursor-pointer items-center justify-between active:opacity-70"
+            >
               <div className="flex items-center gap-[8px]">
                 <img
                   src={guideIcon}
@@ -151,7 +154,10 @@ const MyPage = () => {
             </div>
 
             {/* 자주 묻는 질문 */}
-            <div className="flex w-full cursor-pointer items-center justify-between active:opacity-70">
+            <div
+              onClick={() => navigate("/faq")}
+              className="flex w-full cursor-pointer items-center justify-between active:opacity-70"
+            >
               <div className="flex items-center gap-[8px]">
                 <img
                   src={questionIcon}
@@ -170,7 +176,10 @@ const MyPage = () => {
             </div>
 
             {/* 약관 및 정책 */}
-            <div className="flex w-full cursor-pointer items-center justify-between active:opacity-70">
+            <div
+              onClick={() => navigate("/terms")}
+              className="flex w-full cursor-pointer items-center justify-between active:opacity-70"
+            >
               <div className="flex items-center gap-[8px]">
                 <img
                   src={informationIcon}

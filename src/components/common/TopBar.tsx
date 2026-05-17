@@ -2,7 +2,7 @@ import React from "react";
 import searchIcon from "../../assets/icons/common/search.svg?url";
 import returnIcon from "../../assets/icons/common/return.svg?url";
 
-export type TopBarVariant = "search" | "action";
+export type TopBarVariant = "search" | "action" | "back";
 
 interface TopBarProps {
   variant?: TopBarVariant;
@@ -21,6 +21,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onBackClick,
   onRightAction,
 }) => {
+  const showBackButton = variant === "action" || variant === "back";
+
   return (
     <header
       className={`flex items-center bg-white w-[402px] h-[68px] px-[16px] py-[20px] ${
@@ -28,9 +30,9 @@ export const TopBar: React.FC<TopBarProps> = ({
       }`}
     >
       <div
-        className={`flex items-center ${variant === "action" ? "gap-[16px]" : ""}`}
+        className={`flex items-center ${showBackButton ? "gap-[16px]" : ""}`}
       >
-        {variant === "action" && (
+        {showBackButton && (
           <button onClick={onBackClick} className="w-[15px] h-[15px] shrink-0">
             <span
               className="block w-full h-full bg-grey-800"

@@ -14,6 +14,7 @@ import MyPage from "../pages/MyPage/MyPage";
 import ProfileEditPage from "../pages/MyPage/ProfileEditPage";
 import ChildEditPage from "../pages/MyPage/ChildEditPage";
 import AddChildPage from "../pages/MyPage/AddChildPage";
+import PreparationPage from "../pages/MyPage/PreparationPage";
 
 export const router = createBrowserRouter([
   {
@@ -74,6 +75,33 @@ export const router = createBrowserRouter([
           {
             path: "/child/add",
             element: <AddChildPage />,
+          },
+          {
+            path: "/guide",
+            element: (
+              <PreparationPage
+                title="사용 가이드"
+                message="사용 가이드를 추가하는 중이에요!"
+              />
+            ),
+          },
+          {
+            path: "/faq",
+            element: (
+              <PreparationPage
+                title="자주 묻는 질문"
+                message="자주 묻는 질문을 추가하는 중이에요!"
+              />
+            ),
+          },
+          {
+            path: "/terms",
+            element: (
+              <PreparationPage
+                title="약관 및 정책"
+                message="약관 및 정책을 추가하는 중이에요!"
+              />
+            ),
           },
         ],
       },
