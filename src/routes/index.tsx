@@ -13,6 +13,7 @@ import TestResult from "../pages/test/TestResult";
 import MyPage from "../pages/MyPage/MyPage";
 import ProfileEditPage from "../pages/MyPage/ProfileEditPage";
 import ChildEditPage from "../pages/MyPage/ChildEditPage";
+import AddChildPage from "../pages/MyPage/AddChildPage";
 
 export const router = createBrowserRouter([
   {
@@ -69,6 +70,10 @@ export const router = createBrowserRouter([
           {
             path: "/child/edit",
             element: <ChildEditPage />,
+          },
+          {
+            path: "/child/add",
+            element: <AddChildPage />,
           },
         ],
       },
