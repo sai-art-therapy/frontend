@@ -10,6 +10,7 @@ import TestThirdStep from "../pages/test/TestThirdStep";
 import TestLoadingStep from "../pages/test/TestLoadingStep";
 import TestTimeInputStep from "../pages/test/TestTimeInputStep";
 import TestResult from "../pages/test/TestResult";
+import TestQuestionIntroStep from "../pages/test/TestQuestionIntroStep";
 
 import MyPage from "../pages/MyPage/MyPage";
 import ProfileEditPage from "../pages/MyPage/ProfileEditPage";
@@ -49,6 +50,10 @@ export const router = createBrowserRouter([
       {
         path: "/test-time-input-step",
         element: <TestTimeInputStep />,
+      },
+      {
+        path: "/test-question-intro-step",
+        element: <TestQuestionIntroStep />,
       },
       {
         path: "/test-result",

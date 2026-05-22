@@ -102,7 +102,7 @@ const TestTimeInputStep = () => {
             showIcon={false}
             disabled={!isNextEnabled}
             className="flex-1"
-            onClick={() => navigate("/test-question")}
+            onClick={() => navigate("/test-question-intro-step")}
           >
             다음
           </ActionButton>
