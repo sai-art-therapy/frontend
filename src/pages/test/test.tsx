@@ -1,6 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
+import { FloatingButton } from "../../components/common/FloatingButton";
+
 import lovelyIcon from "../../assets/icons/test/lovely.svg";
 import clipboardCloseIcon from "../../assets/icons/test/clipboard-close.svg";
 
@@ -8,7 +10,7 @@ const Test = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="w-full bg-white font-sans">
+    <div className="w-full bg-white font-sans relative">
       <div className="flex w-full items-center justify-center gap-[154px] px-[24px] pb-[19px] pt-[21px]">
         <span className="text-e-subheadline text-black">9:41</span>
         <div className="flex items-center gap-[5px]">
@@ -80,6 +82,8 @@ const Test = () => {
           </p>
         </div>
       </section>
+
+      <FloatingButton onClick={() => console.log("플로팅 버튼 클릭")} />
     </div>
   );
 };
