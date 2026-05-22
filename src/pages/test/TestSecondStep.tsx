@@ -8,6 +8,7 @@ import fileIcon from "../../assets/icons/test/file.svg";
 import penIcon from "../../assets/icons/test/pen.svg";
 import greenCheckIcon from "../../assets/icons/test/greencheck.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
+import timeIcon from "../../assets/icons/test/time.svg";
 
 const TestSecondStep = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const TestSecondStep = () => {
 
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
+      {/* 상태바 영역 */}
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
         <span className="text-subheadline font-semibold text-black">9:41</span>
         <div className="flex items-center gap-[5px]">
@@ -38,6 +40,7 @@ const TestSecondStep = () => {
         </div>
       </div>
 
+      {/* 헤더 영역 */}
       <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-side py-[20px]">
         <img
           src={returnIcon}
@@ -49,12 +52,14 @@ const TestSecondStep = () => {
       </div>
 
       <main className="flex flex-col px-side pb-[120px]">
+        {/* 인디케이터 바 */}
         <div className="mt-[10px] flex w-full items-center gap-[16px]">
           <div className="h-[5px] flex-1 rounded-full bg-main-500"></div>
           <div className="h-[5px] flex-1 rounded-full bg-main-500"></div>
           <div className="h-[5px] flex-1 rounded-full bg-grey-200"></div>
         </div>
 
+        {/* 메인 타이틀 */}
         <img
           src={treeIcon}
           alt="나무"
@@ -69,7 +74,25 @@ const TestSecondStep = () => {
           </p>
         </div>
 
-        <h3 className="mt-[40px] text-e-body-1 text-black">준비물</h3>
+        <div className="mt-[24px] flex w-full items-center gap-[16px] rounded-sm bg-sub-100 p-[8px]">
+          <img
+            src={timeIcon}
+            alt="소요 시간"
+            className="h-[32px] w-[32px] shrink-0"
+          />
+          <div className="flex flex-col">
+            <span className="text-e-subheadline text-sub-600">
+              소요 시간을 측정해 주세요
+            </span>
+            <span className="mt-[4px] text-caption-1 text-grey-900">
+              그리기 시작부터 완성까지의 시간이 분석에 활용돼요
+            </span>
+          </div>
+        </div>
+
+        <h3 className="mt-[24px] text-e-body-1 text-black">
+          아이에게 제공해 주세요
+        </h3>
         <div className="mt-[16px] flex w-full gap-[12px]">
           <div className="flex flex-1 items-center justify-center gap-[8px] rounded-sm border border-grey-200 bg-white py-[12px]">
             <img src={fileIcon} alt="종이" className="h-[19px] w-[15px]" />
@@ -85,8 +108,9 @@ const TestSecondStep = () => {
           </div>
         </div>
 
+        {/* 지침 목록 안내 */}
         <h3 className="mt-[24px] text-e-body-1 text-black">
-          이렇게 알려주세요
+          아이에게 이렇게 알려주세요
         </h3>
         <div className="mt-[16px] flex flex-col gap-[8px]">
           {guideSteps.map((step, index) => (
@@ -109,6 +133,7 @@ const TestSecondStep = () => {
           ))}
         </div>
 
+        {/* 하단 유의 사항 */}
         <div className="mt-[16px] mb-[20px] flex w-full items-center gap-[10px] rounded-sm bg-warning-100 p-[12px]">
           <img
             src={referIcon}
@@ -122,6 +147,7 @@ const TestSecondStep = () => {
         </div>
       </main>
 
+      {/* 하단 고정 버튼 */}
       <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-side pb-[32px] pt-[16px]">
         <ActionButton
           variant="darkGrey"
