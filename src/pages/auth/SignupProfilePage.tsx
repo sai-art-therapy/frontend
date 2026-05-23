@@ -2,21 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
-type CaregiverType = "엄마" | "아빠" | "기타";
-
-const CAREGIVERS: { type: CaregiverType; emoji: string }[] = [
-  { type: "엄마", emoji: "🧑🏻" },
-  { type: "아빠", emoji: "👨🏻" },
-  { type: "기타", emoji: "🧑🏻" },
-];
-
-const NICKNAME_REGEX = /^[가-힣a-zA-Z0-9]{2,10}$/;
+const NICKNAME_REGEX = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9]{2,10}$/;
 
 type NicknameState = "idle" | "error" | "success";
 
 export default function SignupProfilePage() {
   const navigate = useNavigate();
-  const [caregiver, setCaregiver] = useState<CaregiverType | null>(null);
   const [nickname, setNickname] = useState("");
 
   const nicknameState: NicknameState =
@@ -26,7 +17,7 @@ export default function SignupProfilePage() {
         ? "success"
         : "error";
 
-  const canProceed = caregiver !== null && nicknameState === "success";
+  const canProceed = nicknameState === "success";
 
   const inputClass =
     nicknameState === "error"
