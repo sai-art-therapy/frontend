@@ -50,10 +50,10 @@ export default function SignupProfilePage() {
           {/* 제목 */}
           <div className="flex flex-col gap-2">
             <p className="text-[28px] font-bold leading-[41px] tracking-[0.37px] text-black">
-              어떤 분이신지 궁금해요
+              사용할 닉네임을 입력해주세요
             </p>
             <p className="text-[17px] font-normal leading-[22px] tracking-[-0.41px] text-grey-600">
-              원활한 서비스 이용을 위해 알려주세요
+              2~10자 한글/영문/숫자 가능합니다
             </p>
           </div>
         </div>
@@ -62,34 +62,7 @@ export default function SignupProfilePage() {
         <div className="flex flex-col gap-6 w-full">
 
           {/* 양육자 선택 */}
-          <div className="flex flex-col gap-4">
-            <p className="text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-black">
-              양육자
-            </p>
-            <div className="flex gap-4">
-              {CAREGIVERS.map(({ type, emoji }) => {
-                const selected = caregiver === type;
-                return (
-                  <button
-                    key={type}
-                    onClick={() => setCaregiver(type)}
-                    className={`flex flex-1 items-center gap-[10px] overflow-hidden rounded-sm px-4 py-3 border transition-colors ${
-                      selected
-                        ? "bg-main-100 border-main-500"
-                        : "bg-white border-grey-200"
-                    }`}
-                  >
-                    <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-grey-50">
-                      <span className="text-[21px] leading-none">{emoji}</span>
-                    </div>
-                    <span className="text-[16px] font-semibold leading-[21px] tracking-[-0.32px] text-black">
-                      {type}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          
 
           {/* 닉네임 입력 */}
           <div className="flex flex-col gap-4">

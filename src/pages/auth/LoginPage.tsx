@@ -4,7 +4,7 @@ import googleLogo from "../../assets/icons/auth/google-logo.svg";
 
 export default function LoginPage() {
   const handleGoogleLogin = () => {
-    console.log("Google 로그인");
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`
   };
 
   return (

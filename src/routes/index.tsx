@@ -3,6 +3,7 @@ import RootLayout from "../layout/RootLayout";
 import NavigationLayout from "../layout/NavigationLayout";
 
 import LoginPage from "../pages/auth/LoginPage";
+import AuthCallbackPage from "../pages/auth/AuthCallbackPage";
 import SignupTermsPage from "../pages/auth/SignupTermsPage";
 import SignupProfilePage from "../pages/auth/SignupProfilePage";
 import SignupChildPage from "../pages/auth/SignupChildPage";
@@ -32,6 +33,10 @@ export const router = createBrowserRouter([
       {
         path: "/login",
         element: <LoginPage />,
+      },
+      {
+        path: "/auth/callback",
+        element: <AuthCallbackPage />,
       },
       {
         path: "/signup/terms",
