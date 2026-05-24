@@ -2,6 +2,11 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import RootLayout from "../layout/RootLayout";
 import NavigationLayout from "../layout/NavigationLayout";
 
+import LoginPage from "../pages/auth/LoginPage";
+import AuthCallbackPage from "../pages/auth/AuthCallbackPage";
+import SignupTermsPage from "../pages/auth/SignupTermsPage";
+import SignupProfilePage from "../pages/auth/SignupProfilePage";
+import SignupChildPage from "../pages/auth/SignupChildPage";
 import HomePage from "../pages/test/test";
 import TestStart from "../pages/test/TestStart";
 import TestFirstStep from "../pages/test/TestFirstStep";
@@ -23,7 +28,27 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Navigate to="/test" replace />,
+        element: <Navigate to="/login" replace />,
+      },
+      {
+        path: "/login",
+        element: <LoginPage />,
+      },
+      {
+        path: "/auth/callback",
+        element: <AuthCallbackPage />,
+      },
+      {
+        path: "/signup/terms",
+        element: <SignupTermsPage />,
+      },
+      {
+        path: "/signup/profile",
+        element: <SignupProfilePage />,
+      },
+      {
+        path: "/signup/child",
+        element: <SignupChildPage />,
       },
       {
         path: "/test-start",
