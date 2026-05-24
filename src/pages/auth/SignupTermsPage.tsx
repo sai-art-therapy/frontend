@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
+import apiClient from "../../api/client";
 
 const TERMS = [
   { id: "age" as const, label: "만 14세 이상입니다" },
@@ -116,7 +117,14 @@ export default function SignupTermsPage() {
           size="xl"
           showIcon={false}
           disabled={!allChecked}
-          onClick={() => navigate("/signup/profile")}
+          onClick={async () => {
+            await apiClient.patch('/auth/onboarding/terms', {
+              is_over_14: checked.age,
+              agreed_to_terms: checked.service,
+              agreed_to_privacy: checked.privacy,
+            })
+            navigate("/signup/profile")
+          }}
           className="w-full"
         >
           다음

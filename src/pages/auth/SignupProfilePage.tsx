@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
+import apiClient from "../../api/client";
 
 const NICKNAME_REGEX = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9]{2,10}$/;
 
@@ -94,7 +95,14 @@ export default function SignupProfilePage() {
           size="xl"
           showIcon={false}
           disabled={!canProceed}
-          onClick={() => navigate("/signup/child")}
+          onClick={async () => {
+            try {
+              await apiClient.patch('/auth/onboarding/nickname', { nickname })
+              navigate("/signup/child")
+            } catch (error: any) {
+              console.log('닉네임 저장 실패:', error.response?.status, error.response?.data)
+            }
+          }}
           className="w-full"
         >
           다음

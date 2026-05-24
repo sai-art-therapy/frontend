@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
+import apiClient from "../../api/client";
 import { Dropdown } from "../../components/common/Dropdown";
 import femaleIcon from "../../assets/icons/Mypage/female_regular.svg?url";
 import maleIcon from "../../assets/icons/Mypage/male_regular.svg?url";
@@ -180,7 +181,14 @@ export default function SignupChildPage() {
           size="xl"
           showIcon={false}
           disabled={!canProceed}
-          onClick={() => navigate("/test")}
+          onClick={async () => {
+            await apiClient.post('/children', {
+              name,
+              birth_year: birthYear,
+              gender,
+            })
+            navigate("/home")
+          }}
           className="w-full"
         >
           시작하기
