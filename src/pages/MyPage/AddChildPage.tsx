@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { TopBar } from "../../components/common/TopBar";
 import { TextField } from "../../components/common/Textfield";
 import { Dropdown } from "../../components/common/Dropdown";
+import { createChild } from "../../api/mypage";
 
 import femaleIcon from "../../assets/icons/Mypage/female_regular.svg";
 import maleIcon from "../../assets/icons/Mypage/male_regular.svg";
@@ -10,26 +11,40 @@ import maleIcon from "../../assets/icons/Mypage/male_regular.svg";
 const AddChildPage = () => {
   const navigate = useNavigate();
 
-  const [childName, setChildName] = useState("김성신");
-  const [birthYear, setBirthYear] = useState("2010");
+  const [childName, setChildName] = useState("");
+  const [birthYear, setBirthYear] = useState(String(new Date().getFullYear()));
   const [gender, setGender] = useState<"여아" | "남아">("여아");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const yearOptions = Array.from({ length: 15 }, (_, i) => String(2024 - i));
 
+  const handleSave = async () => {
+    if (!childName.trim()) return;
+    setIsLoading(true);
+    try {
+      await createChild({
+        name: childName.trim(),
+        birth_year: Number(birthYear),
+        gender,
+      });
+      navigate(-1);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-white font-sans pb-[80px]">
-      
-
       <TopBar
         variant="action"
         title="아이 추가하기"
         rightText="확인"
+        isActionDisabled={isLoading || !childName.trim()}
         onBackClick={() => navigate(-1)}
-        onRightAction={() => {
-          console.log("수정 완료:", { childName, birthYear, gender });
-          navigate(-1);
-        }}
+        onRightAction={handleSave}
       />
 
       <main className="flex flex-col px-[16px] pt-[16px]">
@@ -44,7 +59,7 @@ const AddChildPage = () => {
           <div className="mt-[16px] w-full [&>div]:w-full">
             <TextField
               variant="clearable"
-              placeholder="김성신"
+              placeholder="이름을 입력해주세요"
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
               onClear={() => setChildName("")}
@@ -60,23 +75,18 @@ const AddChildPage = () => {
           >
             나이
           </h2>
-
           <div className="mt-[16px] w-full [&>button]:w-full relative">
             <Dropdown
               value={birthYear}
               isOpen={isDropdownOpen}
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             />
-
             {isDropdownOpen && (
               <ul className="absolute z-10 mt-[4px] max-h-[200px] w-full overflow-y-auto rounded-sm border border-grey-200 bg-white shadow-lg">
                 {yearOptions.map((year) => (
                   <li
                     key={year}
-                    onClick={() => {
-                      setBirthYear(year);
-                      setIsDropdownOpen(false);
-                    }}
+                    onClick={() => { setBirthYear(year); setIsDropdownOpen(false); }}
                     className="cursor-pointer px-[16px] py-[12px] text-body-1 text-grey-900 hover:bg-grey-50 active:bg-grey-100"
                   >
                     {year}
@@ -95,9 +105,7 @@ const AddChildPage = () => {
           >
             성별
           </h2>
-
           <div className="mt-[16px] flex w-full items-center gap-[24px]">
-            {/* 여아 버튼 */}
             <button
               onClick={() => setGender("여아")}
               className={`flex cursor-pointer flex-1 items-center justify-center gap-[10px] rounded-sm py-[14px] px-[24px] transition-colors ${
@@ -105,33 +113,20 @@ const AddChildPage = () => {
               }`}
             >
               <div
-                className={`h-[24px] w-[24px] transition-colors ${
-                  gender === "여아" ? "bg-error-500" : "bg-grey-400"
-                }`}
+                className={`h-[24px] w-[24px] transition-colors ${gender === "여아" ? "bg-error-500" : "bg-grey-400"}`}
                 style={{
-                  maskImage: `url("${femaleIcon}")`,
-                  WebkitMaskImage: `url("${femaleIcon}")`,
-                  maskSize: "contain",
-                  WebkitMaskSize: "contain",
-                  maskPosition: "center",
-                  WebkitMaskPosition: "center",
-                  maskRepeat: "no-repeat",
-                  WebkitMaskRepeat: "no-repeat",
+                  maskImage: `url("${femaleIcon}")`, WebkitMaskImage: `url("${femaleIcon}")`,
+                  maskSize: "contain", WebkitMaskSize: "contain",
+                  maskPosition: "center", WebkitMaskPosition: "center",
+                  maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat",
                 }}
               />
-              <span
-                className={`${
-                  gender === "여아"
-                    ? "text-error-500 text-e-body-1"
-                    : "text-grey-500 text-body-1"
-                }`}
-                style={{ fontFeatureSettings: "'liga' off, 'clig' off" }}
-              >
+              <span className={`${gender === "여아" ? "text-error-500 text-e-body-1" : "text-grey-500 text-body-1"}`}
+                style={{ fontFeatureSettings: "'liga' off, 'clig' off" }}>
                 여아
               </span>
             </button>
 
-            {/* 남아 버튼 */}
             <button
               onClick={() => setGender("남아")}
               className={`flex cursor-pointer flex-1 items-center justify-center gap-[10px] rounded-sm py-[14px] px-[24px] transition-colors ${
@@ -139,28 +134,16 @@ const AddChildPage = () => {
               }`}
             >
               <div
-                className={`h-[24px] w-[24px] transition-colors ${
-                  gender === "남아" ? "bg-sub-500" : "bg-grey-400"
-                }`}
+                className={`h-[24px] w-[24px] transition-colors ${gender === "남아" ? "bg-sub-500" : "bg-grey-400"}`}
                 style={{
-                  maskImage: `url("${maleIcon}")`,
-                  WebkitMaskImage: `url("${maleIcon}")`,
-                  maskSize: "contain",
-                  WebkitMaskSize: "contain",
-                  maskPosition: "center",
-                  WebkitMaskPosition: "center",
-                  maskRepeat: "no-repeat",
-                  WebkitMaskRepeat: "no-repeat",
+                  maskImage: `url("${maleIcon}")`, WebkitMaskImage: `url("${maleIcon}")`,
+                  maskSize: "contain", WebkitMaskSize: "contain",
+                  maskPosition: "center", WebkitMaskPosition: "center",
+                  maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat",
                 }}
               />
-              <span
-                className={`${
-                  gender === "남아"
-                    ? "text-sub-500 text-e-body-1"
-                    : "text-grey-500 text-body-1"
-                }`}
-                style={{ fontFeatureSettings: "'liga' off, 'clig' off" }}
-              >
+              <span className={`${gender === "남아" ? "text-sub-500 text-e-body-1" : "text-grey-500 text-body-1"}`}
+                style={{ fontFeatureSettings: "'liga' off, 'clig' off" }}>
                 남아
               </span>
             </button>
