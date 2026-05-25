@@ -1,4 +1,4 @@
-import React, { type InputHTMLAttributes } from "react";
+import React, { useState, type InputHTMLAttributes } from "react";
 import closeIcon from "../../assets/icons/common/close.svg?url";
 
 export interface TextFieldProps extends Omit<
@@ -20,6 +20,8 @@ export const TextField: React.FC<TextFieldProps> = ({
   placeholder,
   ...props
 }) => {
+  const [isFocused, setIsFocused] = useState(false);
+
   const hasText = value !== undefined && String(value).length > 0;
 
   const showClear = variant === "clearable" && hasText && !disabled;
@@ -32,14 +34,9 @@ export const TextField: React.FC<TextFieldProps> = ({
       return "border-error-500 bg-error-100 px-[16px] py-[15px] gap-[10px]";
     }
 
-    if (variant === "clearable") {
-      if (hasText) {
-        return "border-grey-800 bg-white px-[16px] py-[14px] gap-[4px]";
-      }
-      return "border-grey-200 bg-white px-[16px] py-[15px] gap-[10px]";
-    }
-
-    return "border-grey-200 bg-white px-[16px] py-[15px] gap-[10px]";
+    const padding = showClear ? "px-[16px] py-[14px] gap-[4px]" : "px-[16px] py-[15px] gap-[10px]";
+    const border = isFocused ? "border-grey-800" : "border-grey-200";
+    return `${border} bg-white ${padding}`;
   };
 
   const getTextClasses = () => {
@@ -57,6 +54,8 @@ export const TextField: React.FC<TextFieldProps> = ({
         onChange={onChange}
         disabled={disabled}
         placeholder={placeholder}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         className={`flex-1 bg-transparent p-0 outline-none text-body-1 ${getTextClasses()}`}
         {...props}
       />
