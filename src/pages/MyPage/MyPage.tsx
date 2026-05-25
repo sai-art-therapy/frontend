@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { TopBar } from "../../components/common/TopBar";
 import { Popup } from "../../components/common/Popup";
 
-import boyImg from "../../assets/icons/test/boy.png";
 import pencilIcon from "../../assets/icons/Mypage/pencil.svg";
 import nextIcon from "../../assets/icons/Mypage/next.svg";
 import mypagePlusIcon from "../../assets/icons/Mypage/mypageplus.svg";
@@ -12,7 +11,6 @@ import questionIcon from "../../assets/icons/Mypage/question.svg";
 import informationIcon from "../../assets/icons/Mypage/information.svg";
 import logoutIcon from "../../assets/icons/Mypage/logout.svg";
 import withdrawIcon from "../../assets/icons/Mypage/withdraw.svg";
-import momImg from "../../assets/icons/Mypage/mom.png";
 
 const mockUserData = {
   userName: "김성신",
@@ -27,32 +25,21 @@ const MyPage = () => {
   const [isWithdrawPopupOpen, setIsWithdrawPopupOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-white font-sans pb-[80px] relative">
-      <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold text-black">9:41</span>
-        <div className="flex items-center gap-[5px]">
-          <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
-          <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
-          <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
-        </div>
-      </div>
+    <div className="flex min-h-screen w-full flex-col bg-white font-sans relative">
+      
 
       {/* 헤더 영역 */}
-      <TopBar title="마이페이지" variant="search" />
+      <TopBar title="마이페이지" variant="none" />
 
-      <main className="flex flex-col px-[24px] pt-[16px] gap-[16px]">
+      <main className="flex flex-col px-[16px] pt-[16px] gap-[16px]">
         {/* 유저 정보 카드 */}
         <div
           onClick={() => navigate("/profile/edit")}
           className="flex w-full cursor-pointer items-center justify-between rounded-[12px] bg-grey-50 px-[16px] py-[12px] transition-colors active:bg-grey-100"
         >
           <div className="flex items-center gap-[16px]">
-            <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-white p-[14px]">
-              <img
-                src={momImg}
-                alt="프로필"
-                className="h-full w-full object-cover"
-              />
+            <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-white">
+              <span className="text-[32px]">👩</span>
             </div>
             {/* 이름 및 가입일 텍스트 */}
             <div className="flex flex-col gap-[4px]">
@@ -77,11 +64,7 @@ const MyPage = () => {
             <h3 className="text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-black">
               우리 아이
             </h3>
-            <img
-              src={nextIcon}
-              alt="더보기"
-              className="h-[24px] w-[24px] cursor-pointer"
-            />
+            
           </div>
 
           <div className="flex w-full items-center gap-[16px]">
@@ -90,12 +73,8 @@ const MyPage = () => {
               onClick={() => navigate("/child/edit")}
               className="flex h-[74px] flex-1 cursor-pointer items-center justify-center rounded-[12px] border border-grey-100 bg-white px-[12px] transition-colors active:bg-grey-50"
             >
-              <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-grey-50 p-[11px]">
-                <img
-                  src={boyImg}
-                  alt="아이 프로필"
-                  className="h-full w-full object-cover"
-                />
+              <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full bg-grey-50">
+                <span className="text-[26px]">👦</span>
               </div>
               <span className="ml-[8px] whitespace-nowrap text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-black">
                 {mockUserData.childName}

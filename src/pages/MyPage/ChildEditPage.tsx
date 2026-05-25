@@ -19,14 +19,7 @@ const ChildEditPage = () => {
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-white font-sans pb-[80px]">
-      <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold text-black">9:41</span>
-        <div className="flex items-center gap-[5px]">
-          <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
-          <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
-          <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
-        </div>
-      </div>
+      
 
       <TopBar
         variant="action"
@@ -39,7 +32,7 @@ const ChildEditPage = () => {
         }}
       />
 
-      <main className="flex flex-col px-[24px] pt-[16px]">
+      <main className="flex flex-col px-[16px] pt-[16px]">
         {/* 이름 */}
         <section>
           <h2

@@ -2,7 +2,7 @@ import React from "react";
 import searchIcon from "../../assets/icons/common/search.svg?url";
 import returnIcon from "../../assets/icons/common/return.svg?url";
 
-export type TopBarVariant = "search" | "action" | "back";
+export type TopBarVariant = "search" | "action" | "back" | "none";
 
 interface TopBarProps {
   variant?: TopBarVariant;
