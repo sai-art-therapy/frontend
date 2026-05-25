@@ -27,7 +27,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   onTabChange,
 }) => {
   return (
-    <nav className="flex w-[402px] flex-col items-center justify-center gap-[10px] bg-white pt-0 px-[24px] pb-[24px] shadow-[0_-2px_10px_0_rgba(0,0,0,0.05)]">
+    <nav className="flex w-full flex-col items-center justify-center gap-[10px] bg-white pt-0 px-[0px] pb-[24px] shadow-[0_-2px_10px_0_rgba(0,0,0,0.05)]">
       <div className="flex w-full justify-around items-center">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
