@@ -37,7 +37,7 @@ export const ReportBottomSheet: React.FC<ReportBottomSheetProps> = ({
             <button
               key={idx}
               onClick={() => onSelectReport(report)}
-              className="w-full text-left py-1 text-grey-900 text-body-1 font-sans hover:text-main-500 transition-colors"
+              className="w-full cursor-pointer text-left py-1 text-grey-900 text-body-1 font-sans hover:text-main-500 transition-colors"
             >
               {report.name} ･ {report.date} ･ {report.count}번째 검사
             </button>

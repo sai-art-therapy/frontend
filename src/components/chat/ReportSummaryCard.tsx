@@ -39,7 +39,7 @@ export const ReportSummaryCard: React.FC<ReportSummaryCardProps> = ({
 
         <button
           onClick={onChangeClick}
-          className="flex h-[30px] px-[8px] py-[6px] justify-center items-center gap-[6px] rounded-[6px] bg-grey-800 text-white font-sans text-e-footnote"
+          className="flex cursor-pointer h-[30px] px-[8px] py-[6px] justify-center items-center gap-[6px] rounded-[6px] bg-grey-800 text-white font-sans text-e-footnote"
         >
           변경
         </button>

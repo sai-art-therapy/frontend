@@ -88,7 +88,7 @@ const ChatRoomPage = () => {
               <button
                 key={index}
                 onClick={() => setInputValue(question)}
-                className="flex px-[16px] py-[8px] justify-center items-center gap-[10px] rounded-[1000px] bg-grey-100 hover:bg-grey-200/50 transition-colors"
+                className="flex cursor-pointer px-[16px] py-[8px] justify-center items-center gap-[10px] rounded-[1000px] bg-grey-100 hover:bg-grey-200/50 transition-colors"
               >
                 <img
                   src={searchIcon}
