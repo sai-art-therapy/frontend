@@ -4,7 +4,6 @@ import { ActionButton } from "../../components/common/ActionButton";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import documentIcon from "../../assets/icons/test/document.svg";
-import boyImg from "../../assets/icons/test/boy.png";
 import referIcon from "../../assets/icons/test/refer.svg";
 
 interface ChildData {
@@ -82,12 +81,8 @@ const TestFirstStep = () => {
                 }`}
               >
                 <div className="flex items-center gap-[10px]">
-                  <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-grey-50 p-[14px]">
-                    <img
-                      src={boyImg}
-                      alt="아이 프로필"
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-grey-50">
+                    <span className="text-[32px]">👦</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-e-body-1 text-black">

@@ -19,7 +19,7 @@ export default function NavigationLayout() {
       <div className="pb-[80px]">
         <Outlet />
       </div>
-      <div className="fixed bottom-0 w-full max-w-[402px]">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[402px] z-50">
         <BottomNavigation
           activeTab={activeTab as NavTabId}
           onTabChange={(id) => navigate(`/${id}`)}
