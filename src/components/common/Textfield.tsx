@@ -1,10 +1,7 @@
 import React, { useState, type InputHTMLAttributes } from "react";
 import closeIcon from "../../assets/icons/common/close.svg?url";
 
-export interface TextFieldProps extends Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "className"
-> {
+export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   variant?: "default" | "clearable";
   isError?: boolean;
   onClear?: () => void;
@@ -18,21 +15,19 @@ export const TextField: React.FC<TextFieldProps> = ({
   onChange,
   onClear,
   placeholder,
+  className = "",
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
   const hasText = value !== undefined && String(value).length > 0;
-
   const showClear = variant === "clearable" && hasText && !disabled;
 
   const getContainerClasses = () => {
-    if (disabled) {
+    if (disabled)
       return "border-grey-200 bg-grey-100 px-[16px] py-[15px] gap-[10px]";
-    }
-    if (isError) {
+    if (isError)
       return "border-error-500 bg-error-100 px-[16px] py-[15px] gap-[10px]";
-    }
 
     const padding = showClear ? "px-[16px] py-[14px] gap-[4px]" : "px-[16px] py-[15px] gap-[10px]";
     const border = isFocused ? "border-grey-800" : "border-grey-200";
@@ -47,7 +42,7 @@ export const TextField: React.FC<TextFieldProps> = ({
 
   return (
     <div
-      className={`flex w-[280px] items-center rounded-sm border border-solid transition-all ${getContainerClasses()}`}
+      className={`flex w-[280px] items-center rounded-sm border border-solid transition-all ${getContainerClasses()} ${className}`}
     >
       <input
         value={value}
@@ -56,7 +51,7 @@ export const TextField: React.FC<TextFieldProps> = ({
         placeholder={placeholder}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`flex-1 bg-transparent p-0 outline-none text-body-1 ${getTextClasses()}`}
+        className={`flex-1 bg-transparent p-0 outline-none text-body-1 ${getTextClasses()} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
         {...props}
       />
 
