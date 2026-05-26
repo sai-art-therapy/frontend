@@ -13,6 +13,7 @@ import TestResult from "../pages/test/TestResult";
 import TestQuestionIntroStep from "../pages/test/TestQuestionIntroStep";
 import TestQuestionFormStep from "../pages/test/TestQuestionFormStep";
 import ChatIntroStep from "../pages/chat/ChatIntroStep";
+import ChatRoomPage from "../pages/chat/ChatRoomPage";
 
 import MyPage from "../pages/MyPage/MyPage";
 import ProfileEditPage from "../pages/MyPage/ProfileEditPage";
@@ -68,6 +69,10 @@ export const router = createBrowserRouter([
       {
         path: "/chat/intro-step",
         element: <ChatIntroStep />,
+      },
+      {
+        path: "/chat/report/:reportId",
+        element: <ChatRoomPage />,
       },
       {
         element: <NavigationLayout />,
