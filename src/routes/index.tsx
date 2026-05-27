@@ -7,7 +7,7 @@ import AuthCallbackPage from "../pages/auth/AuthCallbackPage";
 import SignupTermsPage from "../pages/auth/SignupTermsPage";
 import SignupProfilePage from "../pages/auth/SignupProfilePage";
 import SignupChildPage from "../pages/auth/SignupChildPage";
-import HomePage from "../pages/test/test";
+import TestHomePage from "../pages/test/test";
 import TestStart from "../pages/test/TestStart";
 import TestFirstStep from "../pages/test/TestFirstStep";
 import TestSecondStep from "../pages/test/TestSecondStep";
@@ -25,6 +25,8 @@ import ProfileEditPage from "../pages/MyPage/ProfileEditPage";
 import ChildEditPage from "../pages/MyPage/ChildEditPage";
 import AddChildPage from "../pages/MyPage/AddChildPage";
 import PreparationPage from "../pages/MyPage/PreparationPage";
+
+import HomePage from "../pages/home/HomePage";
 
 export const router = createBrowserRouter([
   {
@@ -104,11 +106,11 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/home",
-            element: <div>홈 페이지 (준비중)</div>,
+            element: <HomePage />,
           },
           {
             path: "/test",
-            element: <HomePage />,
+            element: <TestHomePage />,
           },
           {
             path: "/mypage",

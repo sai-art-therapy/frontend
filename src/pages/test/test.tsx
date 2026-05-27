@@ -12,8 +12,13 @@ const Test = () => {
   return (
     <div className="w-full bg-white font-sans relative">
       <div className="flex w-full items-center justify-center gap-[154px] px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-e-subheadline text-black">9:41</span>
-        <div className="flex items-center gap-[5px]">
+        <span className="text-e-subheadline invisible" aria-hidden="true">
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-sm bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-sm bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-sm bg-black"></div>

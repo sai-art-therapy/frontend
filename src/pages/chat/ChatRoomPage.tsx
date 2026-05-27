@@ -75,10 +75,10 @@ const ChatRoomPage = () => {
     <div className="w-full bg-white font-sans relative min-h-screen flex flex-col items-center">
       <div className="w-full max-w-[402px] bg-white min-h-screen flex flex-col relative shadow-sm">
         <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-          <span className="text-subheadline font-semibold text-black">
+          <span className="text-subheadline font-semibold invisible" aria-hidden="true">
             9:41
           </span>
-          <div className="flex items-center gap-[5px]">
+          <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
             <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
             <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
             <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
