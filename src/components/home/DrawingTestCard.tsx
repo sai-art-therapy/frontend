@@ -1,8 +1,13 @@
+import React from "react";
 import { ActionButton } from "../../components/common/ActionButton";
 import heartSearchIcon from "../../assets/icons/home/heart-search.svg";
 import StepGuide from "./StepGuide";
 
-const DrawingTestCard = ({ hasHistory }) => {
+interface DrawingTestCardProps {
+  hasHistory: boolean;
+}
+
+const DrawingTestCard: React.FC<DrawingTestCardProps> = ({ hasHistory }) => {
   return (
     <div className="flex w-[370px] p-side flex-col justify-center items-start rounded-md bg-white mb-side">
       <div className="w-full flex justify-between items-start">

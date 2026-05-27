@@ -1,7 +1,18 @@
+import React from "react";
 import boyIcon from "../../assets/icons/test/boy.png";
 import chevronIcon from "../../assets/icons/common/chevron.svg";
 
-const ReportItem = ({ userInfo }) => {
+export interface UserReportInfo {
+  name?: string;
+  date: string;
+  testCount: number;
+}
+
+interface ReportItemProps {
+  userInfo: UserReportInfo;
+}
+
+const ReportItem: React.FC<ReportItemProps> = ({ userInfo }) => {
   return (
     <div className="flex w-[338px] py-[12px] justify-between items-center bg-white cursor-pointer hover:opacity-80 transition-opacity">
       <div className="flex items-center gap-[8px]">

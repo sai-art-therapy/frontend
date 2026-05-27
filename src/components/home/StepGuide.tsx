@@ -1,13 +1,12 @@
 import React from "react";
 
-// 아이콘 임포트
 import homePencilIcon from "../../assets/icons/home/home-pencil.svg";
 import homeCameraIcon from "../../assets/icons/home/home-camera.svg";
 import homeChatIcon from "../../assets/icons/home/home-chat.svg";
 import homePaperIcon from "../../assets/icons/home/home-paper.svg";
 import chevronIcon from "../../assets/icons/common/chevron.svg";
 
-const StepGuide = () => {
+const StepGuide: React.FC = () => {
   return (
     <div className="flex p-[8px_12px] justify-between items-center self-stretch mt-[24px] mb-side bg-white">
       {/* 그림 그리기 */}

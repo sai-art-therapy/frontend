@@ -1,10 +1,24 @@
+import React from "react";
 import { ActionButton } from "../../components/common/ActionButton";
 
 import chatSearchIcon from "../../assets/icons/home/chat-search.svg";
 import boyIcon from "../../assets/icons/test/boy.png";
 import chevronIcon from "../../assets/icons/common/chevron.svg";
 
-const ChatbotCard = ({
+interface ChatbotUserInfo {
+  name: string;
+  daysAgo: string;
+  testCount: number;
+}
+
+interface ChatbotCardProps {
+  hasHistory: boolean;
+  userInfo: ChatbotUserInfo;
+  testedQuestions: string[];
+  defaultQuestions: string[];
+}
+
+const ChatbotCard: React.FC<ChatbotCardProps> = ({
   hasHistory,
   userInfo,
   testedQuestions,
