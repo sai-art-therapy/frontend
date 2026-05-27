@@ -46,8 +46,8 @@ const HomePage: React.FC = () => {
 
       <div className="no-scrollbar flex w-full min-h-screen flex-col items-center bg-grey-50 pb-[40px] font-sans overflow-y-auto select-none">
         <div className="flex w-full items-center justify-center gap-[154px] px-[24px] pb-[19px] pt-[21px] bg-grey-50">
-          <span className="text-e-subheadline text-black">9:41</span>
-          <div className="flex items-center gap-[5px]">
+          <span className="text-e-subheadline invisible" aria-hidden="true">9:41</span>
+          <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
             <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
             <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
             <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
