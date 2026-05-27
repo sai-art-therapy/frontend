@@ -104,7 +104,7 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/home",
-            element: <div>홈 페이지 (준비중)</div>,
+            element: <div />,
           },
           {
             path: "/test",
