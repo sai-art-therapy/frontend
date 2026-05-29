@@ -1,18 +1,18 @@
 import React from "react";
+import type { Report } from "../../api/home";
 import boyIcon from "../../assets/icons/test/boy.png";
 import chevronIcon from "../../assets/icons/common/chevron.svg";
 
-export interface UserReportInfo {
-  name?: string;
-  date: string;
-  testCount: number;
-}
-
 interface ReportItemProps {
-  userInfo: UserReportInfo;
+  report: Report;
 }
 
-const ReportItem: React.FC<ReportItemProps> = ({ userInfo }) => {
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
+
+const ReportItem: React.FC<ReportItemProps> = ({ report }) => {
   return (
     <div className="flex w-[338px] py-[12px] justify-between items-center bg-white cursor-pointer hover:opacity-80 transition-opacity">
       <div className="flex items-center gap-[8px]">
@@ -25,13 +25,15 @@ const ReportItem: React.FC<ReportItemProps> = ({ userInfo }) => {
         </div>
 
         <div className="flex flex-col">
-          <span className="text-black text-e-subheadline">
-            {userInfo?.name || "이름"}
-          </span>
+          <span className="text-black text-e-subheadline">{report.child_name}</span>
           <div className="flex items-center mt-[2px] text-grey-700 text-footnote">
-            <span>{userInfo.date}</span>
-            <span className="mx-[2px]">・</span>
-            <span>{userInfo.testCount} 검사</span>
+            <span>{formatDate(report.tested_at)}</span>
+            {report.test_number !== undefined && (
+              <>
+                <span className="mx-[2px]">・</span>
+                <span>{report.test_number} 검사</span>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,12 @@
 import apiClient from './client';
 
+export interface Report {
+  report_id: number;
+  child_name: string;
+  tested_at: string;
+  test_number?: number;
+}
+
 export interface HomeResponse {
   headline: string;
   child: {
@@ -16,14 +23,14 @@ export interface HomeResponse {
     mode: string;
     title: string;
     description: string;
-    child: any;
-    latest_test: any;
+    child: { child_id: number; name: string } | null;
+    latest_test: { tested_at: string; test_number: number } | null;
     recommended_questions: string[];
     button_text: string;
   };
   recent_reports_card: {
     title: string;
-    reports: any[];
+    reports: Report[];
   };
 }
 
