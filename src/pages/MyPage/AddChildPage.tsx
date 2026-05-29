@@ -23,10 +23,12 @@ const AddChildPage = () => {
     if (!childName.trim()) return;
     setIsLoading(true);
     try {
+      // gender 값을 서버 요구에 맞게 변환
+      const genderForServer = gender === "여아" ? "FEMALE" : "MALE";
       await createChild({
         name: childName.trim(),
         birth_year: Number(birthYear),
-        gender,
+        gender: genderForServer,
       });
       navigate(-1);
     } catch (e) {

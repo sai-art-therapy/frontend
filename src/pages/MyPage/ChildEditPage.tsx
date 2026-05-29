@@ -182,7 +182,7 @@ const ChildEditPage = () => {
           className="mt-[40px] w-full"
           onClick={() => setIsDeletePopupOpen(true)}
         >
-          아이 삭제
+          아이 정보 삭제
         </ActionButton>
       </main>
 
@@ -190,7 +190,7 @@ const ChildEditPage = () => {
       {isDeletePopupOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-[24px]">
           <Popup
-            title="아이 삭제"
+            title="아이 정보 삭제"
             subtitle={`${child?.name ?? "아이"} 정보를 삭제하시겠습니까?\n삭제된 정보는 복구할 수 없습니다.`}
             buttons={[
               { label: "취소", theme: "light", onClick: () => setIsDeletePopupOpen(false) },

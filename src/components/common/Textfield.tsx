@@ -21,7 +21,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   const [isFocused, setIsFocused] = useState(false);
 
   const hasText = value !== undefined && String(value).length > 0;
-  const showClear = variant === "clearable" && hasText && !disabled;
+  const showClear = variant === "clearable" && hasText && !disabled && isFocused;
 
   const getContainerClasses = () => {
     if (disabled)
