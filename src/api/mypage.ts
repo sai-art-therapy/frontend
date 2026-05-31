@@ -35,6 +35,12 @@ export interface ChildUpdateRequest {
   gender?: string;
 }
 
+export interface TestCreateRequest {
+  child_id: number;
+  consent_agreed: boolean;
+  test_type: "HTP";
+}
+
 export const getMyPage = () =>
   axiosInstance.get<MyPageInfo>("/mypage").then((r) => r.data);
 
@@ -56,3 +62,6 @@ export const updateChild = (childId: number, data: ChildUpdateRequest) =>
 
 export const deleteChild = (childId: number) =>
   axiosInstance.delete(`/children/${childId}`);
+
+export const startTest = (data: TestCreateRequest) =>
+  axiosInstance.post("/tests", data).then((r) => r.data);

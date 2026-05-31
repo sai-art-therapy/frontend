@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
 import returnIcon from "../../assets/icons/common/return.svg";
@@ -7,6 +7,10 @@ import aiFilledIcon from "../../assets/icons/test/ai_filled.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
 import checkedIcon from "../../assets/icons/test/checked.svg";
 import uncheckedIcon from "../../assets/icons/test/unchecked.svg";
+
+import { useAppMutation } from "../../hooks/apiHooks";
+import { postTest } from "../../apis/test/test";
+import type { PostTestRequest } from "../../types/test.type";
 
 const processSteps = [
   { num: 1, title: "아이 정보 입력", desc: "이름, 나이, 성별" },
@@ -17,14 +21,52 @@ const processSteps = [
 
 const TestStart = () => {
   const [isConsented, setIsConsented] = useState(false);
-
   const navigate = useNavigate();
+
+  const location = useLocation();
+  const childId = location.state?.childId;
+
+  const { mutate: startTest, isPending } = useAppMutation<any, PostTestRequest>(
+    postTest,
+    {
+      onSuccess: (data) => {
+        console.log("검사 시작 성공 응답 데이터:", data);
+        navigate("/test-first-step");
+      },
+      onError: (error) => {
+        console.error("검사 시작 실패:", error);
+        alert("검사를 시작하는 중 오류가 발생했습니다.");
+      },
+    },
+  );
+
+  const handleFinalStartClick = () => {
+    if (!childId) {
+      alert("자녀 정보가 올바르지 않습니다. 다시 시도해 주세요.");
+      navigate("/test");
+      return;
+    }
+
+    startTest({
+      child_id: childId,
+      consent_agreed: isConsented,
+      test_type: "HTP",
+    });
+  };
 
   return (
     <div className="flex w-full flex-col bg-white font-sans pb-[100px]">
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+        <span
+          className="text-subheadline font-semibold invisible"
+          aria-hidden="true"
+        >
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
@@ -41,7 +83,6 @@ const TestStart = () => {
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
       </div>
 
-      {/* 본문 컨텐츠 시작 */}
       <main className="flex flex-col px-side">
         <div className="mt-[24px] flex flex-col">
           <h2 className="text-[24px] font-bold leading-[34px] tracking-[0.36px] text-grey-800">
@@ -54,7 +95,6 @@ const TestStart = () => {
           </p>
         </div>
 
-        {/* 진행 순서 타이틀 */}
         <div className="mt-[32px] flex items-center gap-[4px]">
           <img
             src={aiFilledIcon}
@@ -64,7 +104,6 @@ const TestStart = () => {
           <h3 className="text-e-body-1 text-grey-800">진행 순서</h3>
         </div>
 
-        {/* 진행 순서 박스 */}
         <div className="mt-[16px] flex flex-col gap-[12px]">
           {processSteps.map((step) => (
             <div
@@ -86,7 +125,6 @@ const TestStart = () => {
           ))}
         </div>
 
-        {/* 노란색 경고 박스 */}
         <div className="mt-[12px] flex flex-col items-start gap-[4px] rounded-sm bg-warning-100 p-[12px]">
           <div className="flex items-center gap-[4px]">
             <img src={referIcon} alt="참고" className="h-[24px] w-[24px]" />
@@ -99,7 +137,6 @@ const TestStart = () => {
           </p>
         </div>
 
-        {/* 동의 체크박스 영역 */}
         <div
           onClick={() => setIsConsented(!isConsented)}
           className={`mb-[40px] mt-[32px] flex cursor-pointer items-center gap-[8px] rounded-sm p-[12px] transition-colors duration-200 ${
@@ -119,16 +156,15 @@ const TestStart = () => {
         </div>
       </main>
 
-      {/* 하단 고정 버튼 영역 */}
       <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-side pb-[32px] pt-[16px]">
         <ActionButton
           variant="darkGrey"
-          disabled={!isConsented}
+          disabled={!isConsented || isPending}
           className="w-full"
           showIcon={false}
-          onClick={() => navigate("/test-first-step")}
+          onClick={handleFinalStartClick}
         >
-          검사 시작하기
+          {isPending ? "준비 중..." : "검사 시작하기"}
         </ActionButton>
       </div>
     </div>
