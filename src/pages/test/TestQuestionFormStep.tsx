@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query"; // 🌟 캐시 리셋용 추가
+import { useQueryClient } from "@tanstack/react-query";
 import { ActionButton } from "../../components/common/ActionButton";
 
 import returnIcon from "../../assets/icons/common/return.svg";
@@ -16,7 +16,7 @@ import {
 const TestQuestionFormStep = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const queryClient = useQueryClient(); // 🌟 추가
+  const queryClient = useQueryClient();
 
   const testId = location.state?.testId;
   const childId = location.state?.childId;
@@ -57,10 +57,8 @@ const TestQuestionFormStep = () => {
         onSuccess: async () => {
           setAnswer("");
 
-          // 🌟 [수정] 박자 밀림 해결: 백엔드에 답변을 보낸 뒤, 최신 데이터를 먼저 조회(refetch)해 옵니다.
           const { data: latestData } = await refetch();
 
-          // 🌟 [수정] 방금 가져온 최신 응답 데이터를 기준으로 완료 여부를 판별하여 즉시 반영합니다.
           if (latestData?.completed) {
             navigate("/test-loading-step", {
               state: { testId, childId, childName },
@@ -100,9 +98,7 @@ const TestQuestionFormStep = () => {
     });
   };
 
-  // 🌟 [추가] 안전한 뒤로가기 핸들러 함수
   const handleBackFlow = () => {
-    // 진행중이던 현재 질문 캐시를 초기화해서 뒤로갔다 돌아올 때의 데이터 충돌 에러를 막습니다.
     queryClient.removeQueries({ queryKey: ["currentPdiQuestion", testId] });
     navigate(-1);
   };
@@ -130,7 +126,7 @@ const TestQuestionFormStep = () => {
         <img
           src={returnIcon}
           alt="뒤로가기"
-          onClick={handleBackFlow} // 🌟 [수정] 일반 navigate(-1) 대신 안전 핸들러 바인딩
+          onClick={handleBackFlow}
           className="h-[14px] w-[14px] cursor-pointer"
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
@@ -147,7 +143,6 @@ const TestQuestionFormStep = () => {
           </div>
         ) : (
           <>
-            {/* 🌟 [수정] 가드 연산자(?.)를 붙여서 데이터가 유실되었을 때 런타임 폭발 에러가 나지 않도록 차단 */}
             <h2 className="mt-[24px] text-left text-[28px] font-[700] leading-[41px] text-[#FF6229] tracking-[0.37px]">
               Q{currentQuestion?.question?.current_step || 1}
             </h2>

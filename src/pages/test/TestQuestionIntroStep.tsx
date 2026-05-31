@@ -8,7 +8,11 @@ import sparkleIcon from "../../assets/icons/test/sparkle.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
 
 import { useAppMutation } from "../../hooks/apiHooks";
-import { startPdiQuestions, type PdiQuestion } from "../../apis/test/test";
+import {
+  startPdiQuestions,
+  skipAllPdiQuestions,
+  type PdiQuestion,
+} from "../../apis/test/test";
 
 const TestQuestionIntroStep = () => {
   const navigate = useNavigate();
@@ -36,6 +40,22 @@ const TestQuestionIntroStep = () => {
       },
     },
   );
+
+  const { mutate: handleSkipAllPdi, isPending: isSkipping } = useAppMutation<
+    any,
+    any
+  >((tId: number) => skipAllPdiQuestions(tId), {
+    onSuccess: () => {
+      console.log("PDI 전체 건너뛰기 성공");
+      navigate("/test-result", {
+        state: { testId, childId, childName },
+      });
+    },
+    onError: (error) => {
+      console.error("PDI 전체 건너뛰기 실패:", error);
+      alert("처리에 실패했습니다. 다시 시도해 주세요.");
+    },
+  });
 
   useEffect(() => {
     if (!testId) {
@@ -150,12 +170,8 @@ const TestQuestionIntroStep = () => {
             size="xl"
             showIcon={false}
             className="flex-1"
-            disabled={isPending}
-            onClick={() =>
-              navigate("/test-loading-step", {
-                state: { testId, childId, childName },
-              })
-            }
+            disabled={isPending || isSkipping}
+            onClick={() => handleSkipAllPdi(Number(testId))}
           >
             건너뛰기
           </ActionButton>
@@ -165,7 +181,7 @@ const TestQuestionIntroStep = () => {
             size="xl"
             showIcon={false}
             className="flex-1"
-            disabled={isPending || questions.length === 0}
+            disabled={isPending || isSkipping || questions.length === 0}
             onClick={() =>
               navigate("/test-question-form-step", {
                 state: { testId, childId, childName, questions },

@@ -102,3 +102,11 @@ export const submitPdiAnswer = async (
   );
   return response.data;
 };
+
+export const skipAllPdiQuestions = async (testId: number) => {
+  const response = await axiosInstance.post<string>(
+    `/tests/${testId}/pdi/skip`,
+    {},
+  );
+  return response.data;
+};
