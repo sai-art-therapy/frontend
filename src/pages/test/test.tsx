@@ -6,8 +6,32 @@ import { FloatingButton } from "../../components/common/FloatingButton";
 import lovelyIcon from "../../assets/icons/test/lovely.svg";
 import clipboardCloseIcon from "../../assets/icons/test/clipboard-close.svg";
 
+// ✅ 추가: 설정해둔 API 함수와 훅 임포트
+import { useAppMutation } from "../../hooks/store/apiHooks"; // 실제 apiHooks 경로에 맞게 수정
+import { postTest } from "../../apis/test/test";
+import type { PostTestRequest } from "../../types/test.type";
+
 const Test = () => {
   const navigate = useNavigate();
+
+  // ✅ 추가: useAppMutation을 통한 POST 요청 연결
+  const { mutate: startTest, isPending } = useAppMutation<string, PostTestRequest>(postTest, {
+    onSuccess: (data) => {
+      // API 응답 성공 시 페이지 이동 (필요시 data값 활용 가능)
+      console.log("검사 시작 성공:", data);
+      navigate("/test-start");
+    },
+  });
+
+  // ✅ 추가: 버튼 클릭 핸들러
+  const handleStartClick = () => {
+    // API 명세서에 명시된 파라미터 전달
+    startTest({
+      child_id: 0,
+      consent_agreed: true,
+      test_type: "HTP",
+    });
+  };
 
   return (
     <div className="w-full bg-white font-sans relative">
@@ -15,10 +39,7 @@ const Test = () => {
         <span className="text-e-subheadline invisible" aria-hidden="true">
           9:41
         </span>
-        <div
-          className="flex items-center gap-[5px] invisible"
-          aria-hidden="true"
-        >
+        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
           <div className="h-[10px] w-[17px] rounded-sm bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-sm bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-sm bg-black"></div>
@@ -40,8 +61,8 @@ const Test = () => {
             <div className="flex flex-col">
               <h2 className="text-e-body-1 text-black">미술 심리 검사</h2>
               <p className="mt-[8px] text-footnote text-grey-600">
-                안내에 따라 검사를 진행해 보세요. AI가 결과를 분석해 우리
-                아이에게 꼭 맞는 육아법을 추천해 드려요.
+                안내에 따라 검사를 진행해 보세요. AI가 결과를 분석해 우리 아이에게 꼭
+                맞는 육아법을 추천해 드려요.
               </p>
             </div>
           </div>
@@ -63,9 +84,10 @@ const Test = () => {
             size="md"
             showIcon={false}
             className="w-full"
-            onClick={() => navigate("/test-start")}
+            onClick={handleStartClick}     {/* ✅ 수정: 클릭 핸들러 연결 */}
+            disabled={isPending}           {/* ✅ 수정: 통신 중 중복클릭 방지 */}
           >
-            시작하기
+            {isPending ? "준비 중..." : "시작하기"} {/* ✅ 수정: 로딩 상태 텍스트 분기 */}
           </ActionButton>
         </div>
       </main>
