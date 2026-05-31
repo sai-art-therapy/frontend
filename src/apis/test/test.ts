@@ -32,3 +32,13 @@ export const analyzeTest = async (testId: number) => {
   );
   return response.data;
 };
+
+export const saveDrawingTime = async (testId: number, minutes: number) => {
+  const response = await axiosInstance.post<string>(
+    `/tests/${testId}/pdi/time`,
+    {
+      drawing_time_minutes: minutes,
+    },
+  );
+  return response.data;
+};

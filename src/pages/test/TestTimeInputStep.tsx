@@ -6,6 +6,9 @@ import { TextField } from "../../components/common/Textfield";
 import returnIcon from "../../assets/icons/common/return.svg";
 import timeIcon from "../../assets/icons/test/time.svg";
 
+import { useAppMutation } from "../../hooks/apiHooks";
+import { saveDrawingTime } from "../../apis/test/test";
+
 const TestTimeInputStep = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,17 +22,39 @@ const TestTimeInputStep = () => {
 
   const isNextEnabled = minutes.trim().length > 0 || seconds.trim().length > 0;
 
+  const { mutate: saveTime, isPending } = useAppMutation<string, any>(
+    ({ tId, totalMinutes }: { tId: number; totalMinutes: number }) =>
+      saveDrawingTime(tId, totalMinutes),
+    {
+      onSuccess: (data) => {
+        console.log("소요 시간 저장 성공:", data);
+        navigate("/test-question-intro-step", {
+          state: {
+            testId,
+            childId,
+            childName,
+          },
+        });
+      },
+      onError: (error) => {
+        console.error("소요 시간 저장 실패:", error);
+        alert("시간을 저장하는 중 오류가 발생했습니다. 다시 시도해 주세요.");
+      },
+    },
+  );
+
   const handleNext = () => {
+    if (!testId) {
+      alert("검사 정보가 존재하지 않습니다.");
+      navigate("/test");
+      return;
+    }
+
     const totalSeconds = (Number(minutes) || 0) * 60 + (Number(seconds) || 0);
 
-    navigate("/test-question-intro-step", {
-      state: {
-        testId,
-        childId,
-        childName,
-        duration: totalSeconds,
-      },
-    });
+    const finalMinutes = Math.round(totalSeconds / 60);
+
+    saveTime({ tId: Number(testId), totalMinutes: finalMinutes });
   };
 
   return (
@@ -118,6 +143,7 @@ const TestTimeInputStep = () => {
             size="xl"
             showIcon={false}
             className="flex-1"
+            disabled={isPending}
             onClick={() => navigate("/test-third-step")}
           >
             건너뛰기
@@ -127,11 +153,11 @@ const TestTimeInputStep = () => {
             variant="darkGrey"
             size="xl"
             showIcon={false}
-            disabled={!isNextEnabled}
+            disabled={!isNextEnabled || isPending}
             className="flex-1"
             onClick={handleNext}
           >
-            다음
+            {isPending ? "저장 중..." : "다음"}
           </ActionButton>
         </div>
       </div>
