@@ -1,4 +1,4 @@
-import apiClient from './client';
+import axiosInstance from "../apis/axiosInstance";
 
 export interface Report {
   report_id: number;
@@ -35,4 +35,4 @@ export interface HomeResponse {
 }
 
 export const getHome = () =>
-  apiClient.get<HomeResponse>('/home').then((r) => r.data);
+  axiosInstance.get<HomeResponse>("/home").then((r) => r.data);
