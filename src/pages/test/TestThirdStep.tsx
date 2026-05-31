@@ -40,7 +40,7 @@ const TestThirdStep = () => {
         navigate("/test-loading-step", {
           state: {
             childId,
-            testId,
+            testId: Number(testId),
             imageUrl: uploadedImageUrl,
           },
         });
@@ -157,7 +157,7 @@ const TestThirdStep = () => {
       alert("업로드할 그림 사진이 없습니다.");
       return;
     }
-    uploadImage({ testId, file: selectedFile });
+    uploadImage({ testId: Number(testId), file: selectedFile });
   };
 
   return (

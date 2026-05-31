@@ -21,3 +21,8 @@ export const uploadTestImage = async (testId: number, file: File) => {
   );
   return response.data;
 };
+
+export const analyzeTest = async (testId: number) => {
+  const response = await axiosInstance.post<string>(`/tests/${testId}/analyze`);
+  return response.data;
+};
