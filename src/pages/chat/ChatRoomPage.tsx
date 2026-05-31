@@ -11,7 +11,11 @@ import searchIcon from "../../assets/icons/common/search.svg";
 import thinkingIcon from "../../assets/icons/chat/thinking.svg";
 
 import { useAppQuery, useAppMutation } from "../../hooks/apiHooks";
-import { getChatHistory, sendChatMessage } from "../../apis/chat/chat";
+import {
+  getChatHistory,
+  sendChatMessage,
+  getSuggestedPrompts,
+} from "../../apis/chat/chat";
 
 interface Message {
   id: string;
@@ -40,6 +44,18 @@ const ChatRoomPage = () => {
   const { data: historyData } = useAppQuery<any>(
     ["chatHistory", numericSessionId],
     () => getChatHistory(numericSessionId),
+    {
+      enabled: numericSessionId !== 0,
+    },
+  );
+
+  const { data: suggestedPromptsData } = useAppQuery<any>(
+    ["suggestedPrompts", hasReport, numericSessionId],
+    () =>
+      getSuggestedPrompts({
+        context: hasReport ? "report" : "general",
+        htp_test_id: hasReport ? numericSessionId : null,
+      }),
     {
       enabled: numericSessionId !== 0,
     },
@@ -167,18 +183,28 @@ const ChatRoomPage = () => {
     { name: "피피바라", date: "5월 7일", count: 1 },
   ];
 
-  const reportQuestions = [
-    "민준이 또래는 보통 어떤가요?",
-    "이번 검사 결과를 쉽게 설명해 주세요",
-    "함께할 활동을 추천해주세요",
-    "지난 검사와 비교하면 어떤가요?",
-  ];
-
-  const generalQuestions = [
-    "HTP 검사가 뭔가요?",
-    "아이가 그림을 잘 안 그리려고 해요",
-    "요즘 아이가 부쩍 짜증을 내요",
-  ];
+  const dynamicQuestions: string[] = (() => {
+    if (Array.isArray(suggestedPromptsData)) {
+      return suggestedPromptsData;
+    }
+    if (suggestedPromptsData && typeof suggestedPromptsData === "object") {
+      const target =
+        suggestedPromptsData.prompts || suggestedPromptsData.data || [];
+      if (Array.isArray(target)) return target;
+    }
+    return hasReport
+      ? [
+          "민준이 또래는 보통 어떤가요?",
+          "이번 검사 결과를 쉽게 설명해 주세요",
+          "함께할 활동을 추천해주세요",
+          "지난 검사와 비교하면 어떤가요?",
+        ]
+      : [
+          "HTP 검사가 뭔가요?",
+          "아이가 그림을 잘 안 그리려고 해요",
+          "요즘 아이가 부쩍 짜증을 내요",
+        ];
+  })();
 
   const sendMessage = (text: string) => {
     if (!text.trim()) return;
@@ -260,24 +286,22 @@ const ChatRoomPage = () => {
               </div>
 
               <div className="mt-[24px] flex flex-col w-full gap-[8px] items-center">
-                {(hasReport ? reportQuestions : generalQuestions).map(
-                  (question, index) => (
-                    <button
-                      key={index}
-                      onClick={() => sendMessage(question)}
-                      className="flex cursor-pointer px-[16px] py-[8px] justify-center items-center gap-[10px] rounded-[1000px] bg-grey-100 hover:bg-grey-200/50 transition-colors"
-                    >
-                      <img
-                        src={searchIcon}
-                        alt="검색"
-                        className="w-[24px] h-[24px] shrink-0"
-                      />
-                      <span className="text-subheadline text-grey-800 font-sans">
-                        {question}
-                      </span>
-                    </button>
-                  ),
-                )}
+                {dynamicQuestions.map((question, index) => (
+                  <button
+                    key={index}
+                    onClick={() => sendMessage(question)}
+                    className="flex cursor-pointer px-[16px] py-[8px] justify-center items-center gap-[10px] rounded-[1000px] bg-grey-100 hover:bg-grey-200/50 transition-colors"
+                  >
+                    <img
+                      src={searchIcon}
+                      alt="검색"
+                      className="w-[24px] h-[24px] shrink-0"
+                    />
+                    <span className="text-subheadline text-grey-800 font-sans">
+                      {question}
+                    </span>
+                  </button>
+                ))}
               </div>
             </>
           )}
