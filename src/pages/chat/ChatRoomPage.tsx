@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { ReportSummaryCard } from "../../components/chat/ReportSummaryCard";
 import { ReportBottomSheet } from "../../components/chat/ReportBottomSheet";
@@ -10,6 +10,9 @@ import logoIcon from "../../assets/icons/common/logo.svg";
 import searchIcon from "../../assets/icons/common/search.svg";
 import thinkingIcon from "../../assets/icons/chat/thinking.svg";
 
+import { useAppQuery } from "../../hooks/apiHooks";
+import { getChatHistory } from "../../apis/chat/chat";
+
 interface Message {
   id: string;
   text: string;
@@ -18,6 +21,7 @@ interface Message {
 
 const ChatRoomPage = () => {
   const navigate = useNavigate();
+  const { sessionId } = useParams<{ sessionId: string }>();
 
   const [hasReport, setHasReport] = useState<boolean>(false);
 
@@ -30,6 +34,27 @@ const ChatRoomPage = () => {
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isAiThinking, setIsAiThinking] = useState(false);
+
+  const { data: historyData } = useAppQuery(
+    ["chatHistory", sessionId],
+    () => getChatHistory(Number(sessionId)),
+    {
+      enabled: !!sessionId,
+    },
+  );
+
+  useEffect(() => {
+    if (historyData) {
+      if (Array.isArray(historyData)) {
+        const formattedMessages: Message[] = historyData.map((item: any) => ({
+          id: String(item.id || Math.random()),
+          text: item.message || item.text || "",
+          sender: (item.sender === "user" ? "user" : "ai") as "user" | "ai",
+        }));
+        setMessages(formattedMessages);
+      }
+    }
+  }, [historyData]);
 
   const mockReportList = [
     { name: "카피바라", date: "5월 7일", count: 3 },
@@ -75,10 +100,16 @@ const ChatRoomPage = () => {
     <div className="w-full bg-white font-sans relative min-h-screen flex flex-col items-center">
       <div className="w-full max-w-[402px] bg-white min-h-screen flex flex-col relative shadow-sm">
         <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-          <span className="text-subheadline font-semibold invisible" aria-hidden="true">
+          <span
+            className="text-subheadline font-semibold invisible"
+            aria-hidden="true"
+          >
             9:41
           </span>
-          <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+          <div
+            className="flex items-center gap-[5px] invisible"
+            aria-hidden="true"
+          >
             <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
             <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
             <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
@@ -147,9 +178,23 @@ const ChatRoomPage = () => {
           {messages.length > 0 && (
             <div className="w-full mt-[24px] flex flex-col gap-[28px]">
               {messages.map((msg) => (
-                <div key={msg.id} className="w-full flex justify-end">
+                <div
+                  key={msg.id}
+                  className={`w-full flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {msg.sender === "ai" && (
+                    <img
+                      src={logoIcon}
+                      alt="AI 로고"
+                      className="w-[32px] h-[32px] object-contain shrink-0 mr-[8px]"
+                    />
+                  )}
                   <div
-                    className="inline-flex p-[16px] justify-center items-center gap-[10px] bg-main-100 text-black text-subheadline font-[400]"
+                    className={`inline-flex p-[16px] justify-center items-center gap-[10px] text-subheadline font-[400] ${
+                      msg.sender === "user"
+                        ? "bg-main-100 text-black"
+                        : "bg-grey-100 text-grey-900"
+                    }`}
                     style={{ borderRadius: "1000px" }}
                   >
                     {msg.text}
