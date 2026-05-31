@@ -1,8 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
-import { useAppQuery } from "../../hooks/apiHooks";
-import { getChatSessions } from "../../apis/chat/chat";
+import { useAppQuery, useAppMutation } from "../../hooks/apiHooks";
+import { getChatSessions, createChatSession } from "../../apis/chat/chat";
+import { getChildren } from "../../api/mypage";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import logoIcon from "../../assets/icons/common/logo.svg";
@@ -23,11 +24,55 @@ const ChatIntroStep = () => {
     getChatSessions,
   );
 
+  const { data: children = [] } = useAppQuery(["childrenList"], getChildren);
+
+  const { mutate: handleStartNewChat, isPending: isCreating } = useAppMutation<
+    any,
+    any
+  >(
+    (body: { child_id: number; htp_test_id: number; title: string }) =>
+      createChatSession(body),
+    {
+      onSuccess: (sessionId) => {
+        navigate(`/chat/report/${sessionId}`);
+      },
+      onError: (error) => {
+        console.error("새 채팅 시작 실패:", error);
+        alert("채팅방을 생성하지 못했습니다. 다시 시도해 주세요.");
+      },
+    },
+  );
+
+  const handleGeneralChatClick = () => {
+    if (children.length === 0) {
+      alert(
+        "등록된 자녀 정보가 없습니다. 마이페이지에서 자녀를 먼저 등록해 주세요.",
+      );
+      return;
+    }
+
+    const targetChildId = children[0].child_id;
+
+    handleStartNewChat({
+      child_id: targetChildId,
+      htp_test_id: null as any,
+      title: "일반 육아 상담",
+    });
+  };
+
   return (
     <div className="w-full bg-white font-sans relative min-h-screen">
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+        <span
+          className="text-subheadline font-semibold invisible"
+          aria-hidden="true"
+        >
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
@@ -113,7 +158,8 @@ const ChatIntroStep = () => {
           variant="lightOrange"
           size="lg"
           showIcon={false}
-          onClick={() => navigate("/chat/general")}
+          disabled={isCreating}
+          onClick={handleGeneralChatClick}
           className="mt-[16px] w-full gap-[6px] font-[600] tracking-[-0.32px]"
         >
           <img
