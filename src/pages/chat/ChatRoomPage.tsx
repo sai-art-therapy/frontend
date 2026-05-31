@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { ReportSummaryCard } from "../../components/chat/ReportSummaryCard";
 import { ReportBottomSheet } from "../../components/chat/ReportBottomSheet";
@@ -10,6 +10,13 @@ import logoIcon from "../../assets/icons/common/logo.svg";
 import searchIcon from "../../assets/icons/common/search.svg";
 import thinkingIcon from "../../assets/icons/chat/thinking.svg";
 
+import { useAppQuery, useAppMutation } from "../../hooks/apiHooks";
+import {
+  getChatHistory,
+  sendChatMessage,
+  getSuggestedPrompts,
+} from "../../apis/chat/chat";
+
 interface Message {
   id: string;
   text: string;
@@ -18,6 +25,9 @@ interface Message {
 
 const ChatRoomPage = () => {
   const navigate = useNavigate();
+
+  const { reportId } = useParams<{ reportId: string }>();
+  const numericSessionId = Number(reportId) || 0;
 
   const [hasReport, setHasReport] = useState<boolean>(false);
 
@@ -31,24 +41,170 @@ const ChatRoomPage = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isAiThinking, setIsAiThinking] = useState(false);
 
+  const { data: historyData } = useAppQuery<any>(
+    ["chatHistory", numericSessionId],
+    () => getChatHistory(numericSessionId),
+    {
+      enabled: numericSessionId !== 0,
+    },
+  );
+
+  const { data: suggestedPromptsData } = useAppQuery<any>(
+    ["suggestedPrompts", hasReport, numericSessionId],
+    () =>
+      getSuggestedPrompts({
+        context: hasReport ? "report" : "general",
+        htp_test_id: hasReport ? numericSessionId : null,
+      }),
+    {
+      enabled: numericSessionId !== 0,
+    },
+  );
+
+  useEffect(() => {
+    if (!historyData) return;
+
+    console.log("백엔드가 내려준 원본 상담 내용 데이터:", historyData);
+
+    if (typeof historyData === "string") {
+      const trimmedData = historyData.trim();
+      if (!trimmedData) return;
+
+      if (trimmedData.includes("\n")) {
+        const lines = trimmedData.split("\n");
+        const parsedMessages: Message[] = lines.map((line, idx) => {
+          const isUser = line.startsWith("User:") || line.startsWith("유저:");
+          const cleanText = line.replace(/^(User:|AI:|유저:|챗봇:)\s*/i, "");
+
+          return {
+            id: `history-${idx}`,
+            text: cleanText || line,
+            sender: isUser ? "user" : "ai",
+          };
+        });
+        setMessages(parsedMessages);
+      } else {
+        setMessages([
+          {
+            id: "history-single",
+            text: trimmedData,
+            sender: "ai",
+          },
+        ]);
+      }
+    } else if (typeof historyData === "object" && !Array.isArray(historyData)) {
+      const targetArray = historyData.messages || historyData.history || [];
+
+      if (Array.isArray(targetArray)) {
+        const formattedMessages: Message[] = targetArray.map(
+          (item: any, idx: number) => {
+            const isUser = item.role === "user" || !!item.user_message;
+            const textContent =
+              item.answer ||
+              item.content ||
+              item.message ||
+              item.user_message?.content ||
+              item.assistant_message?.content ||
+              "";
+
+            return {
+              id: String(item.message_id || item.id || idx),
+              text: textContent,
+              sender: isUser ? "user" : "ai",
+            };
+          },
+        );
+        setMessages(formattedMessages);
+      }
+    } else if (Array.isArray(historyData)) {
+      const formattedMessages: Message[] = historyData.map(
+        (item: any, idx: number) => {
+          const isUser = item.sender === "user" || item.role === "user";
+          const textContent =
+            item.answer ||
+            item.message ||
+            item.text ||
+            item.content ||
+            String(item);
+
+          return {
+            id: String(item.id || idx),
+            text: textContent,
+            sender: isUser ? "user" : "ai",
+          };
+        },
+      );
+      setMessages(formattedMessages);
+    }
+  }, [historyData]);
+
+  const { mutate: handleSendMessageApi } = useAppMutation<any, any>(
+    (variables: { text: string }) =>
+      sendChatMessage(numericSessionId, {
+        message: variables.text,
+        report_id: 0,
+      }),
+    {
+      onSuccess: (response) => {
+        setIsAiThinking(false);
+        console.log("AI가 반환한 답변 데이터:", response);
+
+        let responseText = "";
+
+        if (response && typeof response === "object") {
+          responseText =
+            response.answer ||
+            response.assistant_message?.content ||
+            response.message ||
+            response.content ||
+            JSON.stringify(response);
+        } else {
+          responseText = response;
+        }
+
+        const aiMessage: Message = {
+          id: Date.now().toString(),
+          text: responseText || "답변을 받아오지 못했습니다.",
+          sender: "ai",
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      },
+      onError: (error) => {
+        setIsAiThinking(false);
+        console.error("메시지 전송 실패:", error);
+        alert("메시지 전송에 실패했습니다. 다시 시도해 주세요.");
+      },
+    },
+  );
+
   const mockReportList = [
     { name: "카피바라", date: "5월 7일", count: 3 },
     { name: "카카바라", date: "5월 7일", count: 2 },
     { name: "피피바라", date: "5월 7일", count: 1 },
   ];
 
-  const reportQuestions = [
-    "민준이 또래는 보통 어떤가요?",
-    "이번 검사 결과를 쉽게 설명해 주세요",
-    "함께할 활동을 추천해주세요",
-    "지난 검사와 비교하면 어떤가요?",
-  ];
-
-  const generalQuestions = [
-    "HTP 검사가 뭔가요?",
-    "아이가 그림을 잘 안 그리려고 해요",
-    "요즘 아이가 부쩍 짜증을 내요",
-  ];
+  const dynamicQuestions: string[] = (() => {
+    if (Array.isArray(suggestedPromptsData)) {
+      return suggestedPromptsData;
+    }
+    if (suggestedPromptsData && typeof suggestedPromptsData === "object") {
+      const target =
+        suggestedPromptsData.prompts || suggestedPromptsData.data || [];
+      if (Array.isArray(target)) return target;
+    }
+    return hasReport
+      ? [
+          "민준이 또래는 보통 어떤가요?",
+          "이번 검사 결과를 쉽게 설명해 주세요",
+          "함께할 활동을 추천해주세요",
+          "지난 검사와 비교하면 어떤가요?",
+        ]
+      : [
+          "HTP 검사가 뭔가요?",
+          "아이가 그림을 잘 안 그리려고 해요",
+          "요즘 아이가 부쩍 짜증을 내요",
+        ];
+  })();
 
   const sendMessage = (text: string) => {
     if (!text.trim()) return;
@@ -61,6 +217,8 @@ const ChatRoomPage = () => {
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsAiThinking(true);
+
+    handleSendMessageApi({ text });
   };
 
   const handleSendMessage = () => {
@@ -74,17 +232,6 @@ const ChatRoomPage = () => {
   return (
     <div className="w-full bg-white font-sans relative min-h-screen flex flex-col items-center">
       <div className="w-full max-w-[402px] bg-white min-h-screen flex flex-col relative shadow-sm">
-        <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-          <span className="text-subheadline font-semibold invisible" aria-hidden="true">
-            9:41
-          </span>
-          <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
-            <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
-            <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
-            <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
-          </div>
-        </div>
-
         <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-side py-[20px]">
           <img
             src={returnIcon}
@@ -122,24 +269,22 @@ const ChatRoomPage = () => {
               </div>
 
               <div className="mt-[24px] flex flex-col w-full gap-[8px] items-center">
-                {(hasReport ? reportQuestions : generalQuestions).map(
-                  (question, index) => (
-                    <button
-                      key={index}
-                      onClick={() => sendMessage(question)}
-                      className="flex cursor-pointer px-[16px] py-[8px] justify-center items-center gap-[10px] rounded-[1000px] bg-grey-100 hover:bg-grey-200/50 transition-colors"
-                    >
-                      <img
-                        src={searchIcon}
-                        alt="검색"
-                        className="w-[24px] h-[24px] shrink-0"
-                      />
-                      <span className="text-subheadline text-grey-800 font-sans">
-                        {question}
-                      </span>
-                    </button>
-                  ),
-                )}
+                {dynamicQuestions.map((question, index) => (
+                  <button
+                    key={index}
+                    onClick={() => sendMessage(question)}
+                    className="flex cursor-pointer px-[16px] py-[8px] justify-center items-center gap-[10px] rounded-[1000px] bg-grey-100 hover:bg-grey-200/50 transition-colors"
+                  >
+                    <img
+                      src={searchIcon}
+                      alt="검색"
+                      className="w-[24px] h-[24px] shrink-0"
+                    />
+                    <span className="text-subheadline text-grey-800 font-sans">
+                      {question}
+                    </span>
+                  </button>
+                ))}
               </div>
             </>
           )}
@@ -147,9 +292,23 @@ const ChatRoomPage = () => {
           {messages.length > 0 && (
             <div className="w-full mt-[24px] flex flex-col gap-[28px]">
               {messages.map((msg) => (
-                <div key={msg.id} className="w-full flex justify-end">
+                <div
+                  key={msg.id}
+                  className={`w-full flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {msg.sender === "ai" && (
+                    <img
+                      src={logoIcon}
+                      alt="AI 로고"
+                      className="w-[32px] h-[32px] object-contain shrink-0 mr-[8px]"
+                    />
+                  )}
                   <div
-                    className="inline-flex p-[16px] justify-center items-center gap-[10px] bg-main-100 text-black text-subheadline font-[400]"
+                    className={`inline-flex p-[16px] justify-center items-center gap-[10px] text-subheadline font-[400] ${
+                      msg.sender === "user"
+                        ? "bg-main-100 text-black"
+                        : "bg-grey-100 text-grey-900"
+                    }`}
                     style={{ borderRadius: "1000px" }}
                   >
                     {msg.text}

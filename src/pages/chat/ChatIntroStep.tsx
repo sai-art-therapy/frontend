@@ -1,6 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
+import { useAppQuery, useAppMutation } from "../../hooks/apiHooks";
+import { getChatSessions, createChatSession } from "../../apis/chat/chat";
+import { getChildren } from "../../api/mypage";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import logoIcon from "../../assets/icons/common/logo.svg";
@@ -8,34 +11,71 @@ import boyImage from "../../assets/icons/test/boy.png";
 import chevronIcon from "../../assets/icons/common/chevron.svg";
 import chatIcon from "../../assets/icons/chat/chat.svg";
 
-interface ReportItem {
-  id: number;
-  name: string;
-  date: string;
-  count: number;
-  isRecent: boolean;
-}
+const formatDate = (isoString: string) => {
+  if (!isoString) return "오늘";
+  const date = new Date(isoString);
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+};
 
 const ChatIntroStep = () => {
   const navigate = useNavigate();
 
-  const mockReports: ReportItem[] = [
-    { id: 1, name: "카피바라", date: "5월 7일", count: 3, isRecent: true },
-    { id: 2, name: "카카피바라", date: "5월 7일", count: 2, isRecent: false },
-    { id: 3, name: "피피바라", date: "5월 7일", count: 1, isRecent: false },
-  ];
+  const { data: sessions = [] } = useAppQuery<any[]>(
+    ["chatSessions"],
+    getChatSessions,
+  );
+
+  const { data: children = [] } = useAppQuery<any[]>(
+    ["childrenList"],
+    getChildren,
+  );
+
+  const { mutate: handleStartNewChat, isPending: isCreating } = useAppMutation<
+    any,
+    any
+  >(
+    (body: { child_id: number; htp_test_id: number; title: string }) =>
+      createChatSession(body),
+    {
+      onSuccess: (response) => {
+        const createdRoomId =
+          response && typeof response === "object"
+            ? response.session_id || response.id
+            : response;
+
+        if (createdRoomId) {
+          navigate(`/chat/report/${createdRoomId}`);
+        } else {
+          console.error("방 생성 응답에 ID가 없습니다:", response);
+          alert("채팅방 정보가 올바르지 않습니다.");
+        }
+      },
+      onError: (error) => {
+        console.error("새 채팅 시작 실패:", error);
+        alert("채팅방을 생성하지 못했습니다. 다시 시도해 주세요.");
+      },
+    },
+  );
+
+  const handleGeneralChatClick = () => {
+    if (children.length === 0) {
+      alert(
+        "등록된 자녀 정보가 없습니다. 마이페이지에서 자녀를 먼저 등록해 주세요.",
+      );
+      return;
+    }
+
+    const targetChildId = children[0].child_id;
+
+    handleStartNewChat({
+      child_id: targetChildId,
+      htp_test_id: null as any,
+      title: "일반 육아 상담",
+    });
+  };
 
   return (
     <div className="w-full bg-white font-sans relative min-h-screen">
-      <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
-          <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
-          <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
-          <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
-        </div>
-      </div>
-
       <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-side py-[20px]">
         <img
           src={returnIcon}
@@ -66,10 +106,12 @@ const ChatIntroStep = () => {
         </h2>
 
         <div className="mt-[16px] flex w-full flex-col gap-[8px]">
-          {mockReports.map((report) => (
+          {sessions.map((session, index) => (
             <button
-              key={report.id}
-              onClick={() => navigate(`/chat/report/${report.id}`)}
+              key={`session-${session.id || index}`}
+              onClick={() =>
+                navigate(`/chat/report/${session.session_id || session.id}`)
+              }
               className="flex w-[370px] cursor-pointer max-w-full items-center justify-between rounded-[12px] bg-grey-50 p-[12px] text-left transition-colors hover:bg-grey-100"
             >
               <div className="flex items-center">
@@ -83,18 +125,18 @@ const ChatIntroStep = () => {
 
                 <div className="ml-[8px] flex flex-col">
                   <span className="text-[15px] font-[600] leading-[20px] text-black tracking-[-0.24px]">
-                    {report.name}
+                    {session.child_name || "자녀 정보 없음"}
                   </span>
                   <div className="flex items-center text-[13px] font-[400] text-black tracking-[-0.08px]">
-                    <span>{report.date}</span>
+                    <span>{formatDate(session.created_at)}</span>
                     <span className="mx-[2px]">・</span>
-                    <span>{report.count}번째 검사</span>
+                    <span>{session.test_count || 0}번째 검사</span>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-[16px]">
-                {report.isRecent && (
+                {index === 0 && (
                   <div className="flex items-center justify-center rounded-[4px] border border-solid border-[#C3DFFD] bg-[#EBF4FE] px-[6px] py-[4px]">
                     <span className="text-[12px] font-[600] leading-[16px] text-[#2E90FA]">
                       최근
@@ -115,7 +157,8 @@ const ChatIntroStep = () => {
           variant="lightOrange"
           size="lg"
           showIcon={false}
-          onClick={() => navigate("/chat/general")}
+          disabled={isCreating}
+          onClick={handleGeneralChatClick}
           className="mt-[16px] w-full gap-[6px] font-[600] tracking-[-0.32px]"
         >
           <img
