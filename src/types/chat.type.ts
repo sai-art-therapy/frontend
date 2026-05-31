@@ -14,8 +14,18 @@ export interface GetSuggestedPromptsParams {
   htp_test_id?: number | null;
 }
 
+export interface ChatSession {
+  id: number;
+  title: string;
+  child_id: number;
+  child_name: string;
+  htp_test_id: number;
+  created_at: string;
+  test_count: number;
+}
+
 export type ChatSessionResponse = string;
-export type ChatSessionListResponse = any[];
+export type ChatSessionListResponse = ChatSession[];
 export type ChatHistoryResponse = string;
 export type ChatMessageResponse = string;
 export type SuggestedPromptsResponse = string;

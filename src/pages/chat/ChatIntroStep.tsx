@@ -1,6 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
+import { useAppQuery } from "../../hooks/apiHooks";
+import { getChatSessions } from "../../apis/chat/chat";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import logoIcon from "../../assets/icons/common/logo.svg";
@@ -8,22 +10,18 @@ import boyImage from "../../assets/icons/test/boy.png";
 import chevronIcon from "../../assets/icons/common/chevron.svg";
 import chatIcon from "../../assets/icons/chat/chat.svg";
 
-interface ReportItem {
-  id: number;
-  name: string;
-  date: string;
-  count: number;
-  isRecent: boolean;
-}
+const formatDate = (isoString: string) => {
+  const date = new Date(isoString);
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+};
 
 const ChatIntroStep = () => {
   const navigate = useNavigate();
 
-  const mockReports: ReportItem[] = [
-    { id: 1, name: "카피바라", date: "5월 7일", count: 3, isRecent: true },
-    { id: 2, name: "카카피바라", date: "5월 7일", count: 2, isRecent: false },
-    { id: 3, name: "피피바라", date: "5월 7일", count: 1, isRecent: false },
-  ];
+  const { data: sessions = [] } = useAppQuery(
+    ["chatSessions"],
+    getChatSessions,
+  );
 
   return (
     <div className="w-full bg-white font-sans relative min-h-screen">
@@ -66,10 +64,10 @@ const ChatIntroStep = () => {
         </h2>
 
         <div className="mt-[16px] flex w-full flex-col gap-[8px]">
-          {mockReports.map((report) => (
+          {sessions.map((session, index) => (
             <button
-              key={report.id}
-              onClick={() => navigate(`/chat/report/${report.id}`)}
+              key={session.id}
+              onClick={() => navigate(`/chat/report/${session.id}`)}
               className="flex w-[370px] cursor-pointer max-w-full items-center justify-between rounded-[12px] bg-grey-50 p-[12px] text-left transition-colors hover:bg-grey-100"
             >
               <div className="flex items-center">
@@ -83,18 +81,18 @@ const ChatIntroStep = () => {
 
                 <div className="ml-[8px] flex flex-col">
                   <span className="text-[15px] font-[600] leading-[20px] text-black tracking-[-0.24px]">
-                    {report.name}
+                    {session.child_name}
                   </span>
                   <div className="flex items-center text-[13px] font-[400] text-black tracking-[-0.08px]">
-                    <span>{report.date}</span>
+                    <span>{formatDate(session.created_at)}</span>
                     <span className="mx-[2px]">・</span>
-                    <span>{report.count}번째 검사</span>
+                    <span>{session.test_count}번째 검사</span>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-[16px]">
-                {report.isRecent && (
+                {index === 0 && (
                   <div className="flex items-center justify-center rounded-[4px] border border-solid border-[#C3DFFD] bg-[#EBF4FE] px-[6px] py-[4px]">
                     <span className="text-[12px] font-[600] leading-[16px] text-[#2E90FA]">
                       최근
