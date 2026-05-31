@@ -64,3 +64,41 @@ export const startPdiQuestions = async (testId: number) => {
   );
   return response.data;
 };
+
+export interface CurrentPdiQuestionResponse {
+  completed: boolean;
+  question: {
+    question_id: number;
+    round_no: number;
+    sort_order: number;
+    question_text: string;
+    question_type: string;
+    target_type: string;
+    current_step: number;
+    total_count: number;
+  };
+}
+
+export const getCurrentPdiQuestion = async (testId: number) => {
+  const response = await axiosInstance.get<CurrentPdiQuestionResponse>(
+    `/tests/${testId}/pdi/current`,
+  );
+  return response.data;
+};
+
+export interface PdiAnswerRequest {
+  question_id: number;
+  answer_text: string;
+  skip: boolean;
+}
+
+export const submitPdiAnswer = async (
+  testId: number,
+  data: PdiAnswerRequest,
+) => {
+  const response = await axiosInstance.post<string>(
+    `/tests/${testId}/pdi/answer`,
+    data,
+  );
+  return response.data;
+};

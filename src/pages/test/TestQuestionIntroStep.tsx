@@ -44,8 +44,10 @@ const TestQuestionIntroStep = () => {
       return;
     }
 
-    handleStartPdi(Number(testId));
-  }, [testId]);
+    if (questions.length === 0) {
+      handleStartPdi(Number(testId));
+    }
+  }, [testId, questions.length]);
 
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
@@ -143,7 +145,6 @@ const TestQuestionIntroStep = () => {
 
       <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-side pb-[32px] pt-[16px]">
         <div className="flex w-full items-center gap-[16px]">
-          {/* 건너뛰기 버튼 */}
           <ActionButton
             variant="lightGrey"
             size="xl"
@@ -159,7 +160,6 @@ const TestQuestionIntroStep = () => {
             건너뛰기
           </ActionButton>
 
-          {/* 답변할게요 버튼 */}
           <ActionButton
             variant="darkGrey"
             size="xl"
