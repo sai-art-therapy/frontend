@@ -10,8 +10,8 @@ import logoIcon from "../../assets/icons/common/logo.svg";
 import searchIcon from "../../assets/icons/common/search.svg";
 import thinkingIcon from "../../assets/icons/chat/thinking.svg";
 
-import { useAppQuery } from "../../hooks/apiHooks";
-import { getChatHistory } from "../../apis/chat/chat";
+import { useAppQuery, useAppMutation } from "../../hooks/apiHooks";
+import { getChatHistory, sendChatMessage } from "../../apis/chat/chat";
 
 interface Message {
   id: string;
@@ -21,7 +21,9 @@ interface Message {
 
 const ChatRoomPage = () => {
   const navigate = useNavigate();
-  const { sessionId } = useParams<{ sessionId: string }>();
+
+  const { reportId } = useParams<{ reportId: string }>();
+  const numericSessionId = Number(reportId) || 0;
 
   const [hasReport, setHasReport] = useState<boolean>(false);
 
@@ -35,26 +37,129 @@ const ChatRoomPage = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isAiThinking, setIsAiThinking] = useState(false);
 
-  const { data: historyData } = useAppQuery(
-    ["chatHistory", sessionId],
-    () => getChatHistory(Number(sessionId)),
+  const { data: historyData } = useAppQuery<any>(
+    ["chatHistory", numericSessionId],
+    () => getChatHistory(numericSessionId),
     {
-      enabled: !!sessionId,
+      enabled: numericSessionId !== 0,
     },
   );
 
   useEffect(() => {
-    if (historyData) {
-      if (Array.isArray(historyData)) {
-        const formattedMessages: Message[] = historyData.map((item: any) => ({
-          id: String(item.id || Math.random()),
-          text: item.message || item.text || "",
-          sender: (item.sender === "user" ? "user" : "ai") as "user" | "ai",
-        }));
+    if (!historyData) return;
+
+    console.log("백엔드가 내려준 원본 상담 내용 데이터:", historyData);
+
+    if (typeof historyData === "string") {
+      const trimmedData = historyData.trim();
+      if (!trimmedData) return;
+
+      if (trimmedData.includes("\n")) {
+        const lines = trimmedData.split("\n");
+        const parsedMessages: Message[] = lines.map((line, idx) => {
+          const isUser = line.startsWith("User:") || line.startsWith("유저:");
+          const cleanText = line.replace(/^(User:|AI:|유저:|챗봇:)\s*/i, "");
+
+          return {
+            id: `history-${idx}`,
+            text: cleanText || line,
+            sender: isUser ? "user" : "ai",
+          };
+        });
+        setMessages(parsedMessages);
+      } else {
+        setMessages([
+          {
+            id: "history-single",
+            text: trimmedData,
+            sender: "ai",
+          },
+        ]);
+      }
+    } else if (typeof historyData === "object" && !Array.isArray(historyData)) {
+      const targetArray = historyData.messages || historyData.history || [];
+
+      if (Array.isArray(targetArray)) {
+        const formattedMessages: Message[] = targetArray.map(
+          (item: any, idx: number) => {
+            const isUser = item.role === "user" || !!item.user_message;
+            const textContent =
+              item.answer ||
+              item.content ||
+              item.message ||
+              item.user_message?.content ||
+              item.assistant_message?.content ||
+              "";
+
+            return {
+              id: String(item.message_id || item.id || idx),
+              text: textContent,
+              sender: isUser ? "user" : "ai",
+            };
+          },
+        );
         setMessages(formattedMessages);
       }
+    } else if (Array.isArray(historyData)) {
+      const formattedMessages: Message[] = historyData.map(
+        (item: any, idx: number) => {
+          const isUser = item.sender === "user" || item.role === "user";
+          const textContent =
+            item.answer ||
+            item.message ||
+            item.text ||
+            item.content ||
+            String(item);
+
+          return {
+            id: String(item.id || idx),
+            text: textContent,
+            sender: isUser ? "user" : "ai",
+          };
+        },
+      );
+      setMessages(formattedMessages);
     }
   }, [historyData]);
+
+  const { mutate: handleSendMessageApi } = useAppMutation<any, any>(
+    (variables: { text: string }) =>
+      sendChatMessage(numericSessionId, {
+        message: variables.text,
+        report_id: 0,
+      }),
+    {
+      onSuccess: (response) => {
+        setIsAiThinking(false);
+        console.log("AI가 반환한 답변 데이터:", response);
+
+        let responseText = "";
+
+        if (response && typeof response === "object") {
+          responseText =
+            response.answer ||
+            response.assistant_message?.content ||
+            response.message ||
+            response.content ||
+            JSON.stringify(response);
+        } else {
+          responseText = response;
+        }
+
+        const aiMessage: Message = {
+          id: Date.now().toString(),
+          text: responseText || "답변을 받아오지 못했습니다.",
+          sender: "ai",
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      },
+      onError: (error) => {
+        setIsAiThinking(false);
+        console.error("메시지 전송 실패:", error);
+        alert("메시지 전송에 실패했습니다. 다시 시도해 주세요.");
+      },
+    },
+  );
 
   const mockReportList = [
     { name: "카피바라", date: "5월 7일", count: 3 },
@@ -86,6 +191,8 @@ const ChatRoomPage = () => {
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsAiThinking(true);
+
+    handleSendMessageApi({ text });
   };
 
   const handleSendMessage = () => {

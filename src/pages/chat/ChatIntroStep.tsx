@@ -12,6 +12,7 @@ import chevronIcon from "../../assets/icons/common/chevron.svg";
 import chatIcon from "../../assets/icons/chat/chat.svg";
 
 const formatDate = (isoString: string) => {
+  if (!isoString) return "오늘";
   const date = new Date(isoString);
   return `${date.getMonth() + 1}월 ${date.getDate()}일`;
 };
@@ -19,12 +20,15 @@ const formatDate = (isoString: string) => {
 const ChatIntroStep = () => {
   const navigate = useNavigate();
 
-  const { data: sessions = [] } = useAppQuery(
+  const { data: sessions = [] } = useAppQuery<any[]>(
     ["chatSessions"],
     getChatSessions,
   );
 
-  const { data: children = [] } = useAppQuery(["childrenList"], getChildren);
+  const { data: children = [] } = useAppQuery<any[]>(
+    ["childrenList"],
+    getChildren,
+  );
 
   const { mutate: handleStartNewChat, isPending: isCreating } = useAppMutation<
     any,
@@ -33,8 +37,18 @@ const ChatIntroStep = () => {
     (body: { child_id: number; htp_test_id: number; title: string }) =>
       createChatSession(body),
     {
-      onSuccess: (sessionId) => {
-        navigate(`/chat/report/${sessionId}`);
+      onSuccess: (response) => {
+        const createdRoomId =
+          response && typeof response === "object"
+            ? response.session_id || response.id
+            : response;
+
+        if (createdRoomId) {
+          navigate(`/chat/report/${createdRoomId}`);
+        } else {
+          console.error("방 생성 응답에 ID가 없습니다:", response);
+          alert("채팅방 정보가 올바르지 않습니다.");
+        }
       },
       onError: (error) => {
         console.error("새 채팅 시작 실패:", error);
@@ -111,8 +125,10 @@ const ChatIntroStep = () => {
         <div className="mt-[16px] flex w-full flex-col gap-[8px]">
           {sessions.map((session, index) => (
             <button
-              key={session.id}
-              onClick={() => navigate(`/chat/report/${session.id}`)}
+              key={`session-${session.id || index}`}
+              onClick={() =>
+                navigate(`/chat/report/${session.session_id || session.id}`)
+              }
               className="flex w-[370px] cursor-pointer max-w-full items-center justify-between rounded-[12px] bg-grey-50 p-[12px] text-left transition-colors hover:bg-grey-100"
             >
               <div className="flex items-center">
@@ -126,12 +142,12 @@ const ChatIntroStep = () => {
 
                 <div className="ml-[8px] flex flex-col">
                   <span className="text-[15px] font-[600] leading-[20px] text-black tracking-[-0.24px]">
-                    {session.child_name}
+                    {session.child_name || "자녀 정보 없음"}
                   </span>
                   <div className="flex items-center text-[13px] font-[400] text-black tracking-[-0.08px]">
                     <span>{formatDate(session.created_at)}</span>
                     <span className="mx-[2px]">・</span>
-                    <span>{session.test_count}번째 검사</span>
+                    <span>{session.test_count || 0}번째 검사</span>
                   </div>
                 </div>
               </div>
