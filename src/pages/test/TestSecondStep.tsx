@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
 import returnIcon from "../../assets/icons/common/return.svg";
@@ -12,6 +12,9 @@ import timeIcon from "../../assets/icons/test/time.svg";
 
 const TestSecondStep = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const childId = location.state?.childId;
 
   const guideSteps = [
     {
@@ -28,12 +31,26 @@ const TestSecondStep = () => {
     },
   ];
 
+  const handleNextClick = () => {
+    navigate("/test-third-step", {
+      state: { childId: childId },
+    });
+  };
+
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
       {/* 상태바 영역 */}
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+        <span
+          className="text-subheadline font-semibold invisible"
+          aria-hidden="true"
+        >
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
@@ -153,7 +170,7 @@ const TestSecondStep = () => {
           variant="darkGrey"
           className="w-full"
           showIcon={false}
-          onClick={() => navigate("/test-third-step")}
+          onClick={handleNextClick}
         >
           다음
         </ActionButton>
