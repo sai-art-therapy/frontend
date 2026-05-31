@@ -76,23 +76,6 @@ const ChatIntroStep = () => {
 
   return (
     <div className="w-full bg-white font-sans relative min-h-screen">
-      <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span
-          className="text-subheadline font-semibold invisible"
-          aria-hidden="true"
-        >
-          9:41
-        </span>
-        <div
-          className="flex items-center gap-[5px] invisible"
-          aria-hidden="true"
-        >
-          <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
-          <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
-          <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
-        </div>
-      </div>
-
       <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-side py-[20px]">
         <img
           src={returnIcon}
