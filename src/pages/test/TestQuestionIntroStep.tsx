@@ -1,5 +1,5 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
 import returnIcon from "../../assets/icons/common/return.svg";
@@ -7,24 +7,59 @@ import heartCheckIcon from "../../assets/icons/test/heartcheck.svg";
 import sparkleIcon from "../../assets/icons/test/sparkle.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
 
+import { useAppMutation } from "../../hooks/apiHooks";
+import { startPdiQuestions, type PdiQuestion } from "../../apis/test/test";
+
 const TestQuestionIntroStep = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const mockQuestions = [
-    "아이가 친구들과 어울릴 때 어떤 모습인가요?",
-    "아이가 친구들과 어울릴 때 어떤 모습인가요?",
-    "아이가 친구들과 어울릴 때 어떤 모습인가요?",
-    "아이가 친구들과 어울릴 때 어떤 모습인가요?",
-    "아이가 친구들과 어울릴 때 어떤 모습인가요?",
-    "아이가 친구들과 어울릴 때 어떤 모습인가요?",
-    "아이가 친구들과 어울릴 때 어떤 모습인가요?",
-  ];
+  const testId = location.state?.testId;
+  const childId = location.state?.childId;
+  const childName = location.state?.childName || "아이";
+
+  const [questions, setQuestions] = useState<PdiQuestion[]>([]);
+
+  const { mutate: handleStartPdi, isPending } = useAppMutation<any, any>(
+    (tId: number) => startPdiQuestions(tId),
+    {
+      onSuccess: (data) => {
+        console.log("PDI 질문 생성 성공:", data);
+        if (data && data.questions) {
+          setQuestions(data.questions);
+        }
+      },
+      onError: (error) => {
+        console.error("PDI 질문 생성 실패:", error);
+        alert("질문을 불러오는 중 오류가 발생했습니다. 다시 시도해 주세요.");
+        navigate(-1);
+      },
+    },
+  );
+
+  useEffect(() => {
+    if (!testId) {
+      alert("검사 정보가 존재하지 않습니다.");
+      navigate("/test");
+      return;
+    }
+
+    handleStartPdi(Number(testId));
+  }, [testId]);
 
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+        <span
+          className="text-subheadline font-semibold invisible"
+          aria-hidden="true"
+        >
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
@@ -68,16 +103,29 @@ const TestQuestionIntroStep = () => {
           </div>
 
           <div className="flex flex-col gap-[8px]">
-            {mockQuestions.map((question, index) => (
-              <div key={index} className="flex items-start">
-                <span className="w-[32px] shrink-0 text-[15px] font-[600] leading-[20px] text-grey-700 tracking-[-0.24px]">
-                  Q{index + 1}.
-                </span>
-                <span className="text-[13px] font-[400] leading-[18px] text-grey-700 tracking-[-0.08px]">
-                  {question}
-                </span>
+            {isPending ? (
+              <div className="text-center py-[20px] text-[13px] text-grey-400">
+                아이의 맞춤형 질문을 생성하고 있어요...
               </div>
-            ))}
+            ) : questions.length === 0 ? (
+              <div className="text-center py-[20px] text-[13px] text-grey-400">
+                생성된 질문이 없습니다.
+              </div>
+            ) : (
+              questions.map((question, index) => (
+                <div
+                  key={question.question_id || index}
+                  className="flex items-start"
+                >
+                  <span className="w-[32px] shrink-0 text-[15px] font-[600] leading-[20px] text-grey-700 tracking-[-0.24px]">
+                    Q{index + 1}.
+                  </span>
+                  <span className="text-[13px] font-[400] leading-[18px] text-grey-700 tracking-[-0.08px]">
+                    {question.question_text}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -101,7 +149,12 @@ const TestQuestionIntroStep = () => {
             size="xl"
             showIcon={false}
             className="flex-1"
-            onClick={() => navigate("/test-loading-step")} // 임시 라우팅 경로
+            disabled={isPending}
+            onClick={() =>
+              navigate("/test-loading-step", {
+                state: { testId, childId, childName },
+              })
+            }
           >
             건너뛰기
           </ActionButton>
@@ -112,7 +165,12 @@ const TestQuestionIntroStep = () => {
             size="xl"
             showIcon={false}
             className="flex-1"
-            onClick={() => navigate("/test-question-form-step")} // 임시 라우팅 경로
+            disabled={isPending || questions.length === 0}
+            onClick={() =>
+              navigate("/test-question-form-step", {
+                state: { testId, childId, childName, questions },
+              })
+            }
           >
             답변할게요
           </ActionButton>

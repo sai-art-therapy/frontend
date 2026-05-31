@@ -42,3 +42,25 @@ export const saveDrawingTime = async (testId: number, minutes: number) => {
   );
   return response.data;
 };
+
+export interface PdiQuestion {
+  question_id: number;
+  question_text: string;
+}
+
+export interface PdiStartResponse {
+  test_id: number;
+  status: string;
+  questions: PdiQuestion[];
+}
+
+export const startPdiQuestions = async (testId: number) => {
+  const response = await axiosInstance.post<PdiStartResponse>(
+    `/tests/${testId}/pdi/start`,
+    {},
+    {
+      timeout: 90000,
+    },
+  );
+  return response.data;
+};
