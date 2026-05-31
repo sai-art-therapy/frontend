@@ -6,22 +6,20 @@ import returnIcon from "../../assets/icons/common/return.svg";
 import documentIcon from "../../assets/icons/test/document.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
 
-interface ChildData {
-  id: number;
-  name: string;
-  age: number;
-  gender: string;
-  testCount: number;
-}
-
-const mockChildren: ChildData[] = [
-  { id: 1, name: "이름", age: 0, gender: "성별", testCount: 0 },
-  { id: 2, name: "이름", age: 0, gender: "성별", testCount: 0 },
-];
+import { useAppQuery } from "../../hooks/apiHooks";
+import { getChildren } from "../../api/mypage";
 
 const TestFirstStep = () => {
   const navigate = useNavigate();
   const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
+
+  const { data: children, isLoading } = useAppQuery(["children"], getChildren);
+
+  const calculateAge = (birthYear: number) => {
+    const currentYear = 2026;
+    const age = currentYear - birthYear;
+    return age >= 0 ? age : 0;
+  };
 
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
@@ -74,70 +72,85 @@ const TestFirstStep = () => {
           </p>
         </div>
 
+        {/* 자녀 리스트 카드 영역 */}
         <div className="mt-[46px] flex w-full flex-col gap-[24px]">
-          {mockChildren.map((child) => {
-            const isSelected = selectedChildId === child.id;
+          {isLoading ? (
+            <div className="text-center text-footnote text-grey-400 py-[20px]">
+              자녀 목록을 불러오는 중입니다...
+            </div>
+          ) : children && children.length > 0 ? (
+            children.map((child) => {
+              const isSelected = selectedChildId === child.child_id;
 
-            return (
-              <div
-                key={child.id}
-                onClick={() => setSelectedChildId(child.id)}
-                className={`flex w-full cursor-pointer items-center justify-between rounded-md border p-[12px_16px] transition-colors duration-200 ${
-                  isSelected
-                    ? "border-main-500 bg-white"
-                    : "border-grey-200 bg-white"
-                }`}
-              >
-                <div className="flex items-center gap-[10px]">
-                  <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-grey-50">
-                    <span className="text-[32px]">👦</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-e-body-1 text-black">
-                      {child.name}
-                    </span>
-                    <span className="text-subheadline text-grey-700">
-                      만 {child.age}세 ・ {child.gender} ・ 검사{" "}
-                      {child.testCount}회
-                    </span>
-                  </div>
-                </div>
-
-                <svg
-                  width="19"
-                  height="19"
-                  viewBox="0 0 19 19"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="shrink-0 transition-colors duration-200"
+              return (
+                <div
+                  key={child.child_id}
+                  onClick={() => setSelectedChildId(child.child_id)}
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-md border p-[12px_16px] transition-colors duration-200 ${
+                    isSelected
+                      ? "border-main-500 bg-white"
+                      : "border border-grey-200 bg-white"
+                  }`}
                 >
-                  <circle
-                    cx="9.5"
-                    cy="9.5"
-                    r="8.5"
-                    fill={isSelected ? "var(--color-main-500)" : "none"}
-                    stroke={
-                      isSelected
-                        ? "var(--color-main-500)"
-                        : "var(--color-grey-200)"
-                    }
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M6 9.5L8.5 12L13 7"
-                    stroke={
-                      isSelected
-                        ? "var(--color-white)"
-                        : "var(--color-grey-200)"
-                    }
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-            );
-          })}
+                  <div className="flex items-center gap-[10px]">
+                    <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-grey-50">
+                      <span className="text-[32px]">
+                        {child.gender === "male" ? "👦" : "👧"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-e-body-1 text-black">
+                        {child.name}
+                      </span>
+                      <span className="text-subheadline text-grey-700">
+                        만 {calculateAge(child.birth_year)}세 ・{" "}
+                        {child.gender === "male" ? "남아" : "여아"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <svg
+                    width="19"
+                    height="19"
+                    viewBox="0 0 19 19"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="shrink-0 transition-colors duration-200"
+                  >
+                    <circle
+                      cx="9.5"
+                      cy="9.5"
+                      r="8.5"
+                      fill={
+                        isSelected ? "var(--color-main-500, #FBBF24)" : "none"
+                      }
+                      stroke={
+                        isSelected
+                          ? "var(--color-main-500, #FBBF24)"
+                          : "var(--color-grey-200, #E5E7EB)"
+                      }
+                      strokeWidth="1.5"
+                    />
+                    <path
+                      d="M6 9.5L8.5 12L13 7"
+                      stroke={
+                        isSelected
+                          ? "var(--color-white, #FFFFFF)"
+                          : "var(--color-grey-200, #E5E7EB)"
+                      }
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center text-footnote text-grey-500 py-[4px] rounded-sm border border-dashed border-grey-300 p-[20px]">
+              등록된 자녀가 없습니다. 마이페이지에서 자녀를 먼저 등록해 주세요.
+            </div>
+          )}
         </div>
 
         <div className="mt-[24px] mb-[32px] flex w-full items-center gap-[10px] rounded-sm bg-warning-100 p-[12px]">
