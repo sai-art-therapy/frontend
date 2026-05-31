@@ -1,21 +1,121 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { ActionButton } from "../../components/common/ActionButton";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
 
+import { useAppQuery, useAppMutation } from "../../hooks/apiHooks";
+import {
+  getCurrentPdiQuestion,
+  submitPdiAnswer,
+  type CurrentPdiQuestionResponse,
+} from "../../apis/test/test";
+
 const TestQuestionFormStep = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+
+  const testId = location.state?.testId;
+  const childId = location.state?.childId;
+  const childName = location.state?.childName || "아이";
+
   const [answer, setAnswer] = useState<string>("");
 
+  const {
+    data: currentQuestion,
+    isPending,
+    isFetching,
+    refetch,
+  } = useAppQuery<CurrentPdiQuestionResponse>(
+    ["currentPdiQuestion", testId],
+    () => getCurrentPdiQuestion(Number(testId)),
+    {
+      enabled: !!testId,
+    },
+  );
+
+  useEffect(() => {
+    if (!testId) {
+      alert("검사 정보가 존재하지 않습니다.");
+      navigate("/test");
+    }
+  }, [testId]);
+
+  const { mutate: handleSubmitAnswer, isPending: isSubmitting } =
+    useAppMutation<any, any>(
+      ({
+        tId,
+        body,
+      }: {
+        tId: number;
+        body: { question_id: number; answer_text: string; skip: boolean };
+      }) => submitPdiAnswer(tId, body),
+      {
+        onSuccess: async () => {
+          setAnswer("");
+
+          const { data: latestData } = await refetch();
+
+          if (latestData?.completed) {
+            navigate("/test-loading-step", {
+              state: { testId, childId, childName },
+            });
+          }
+        },
+        onError: (error) => {
+          console.error("PDI 답변 처리 실패:", error);
+          alert("처리에 실패했습니다. 다시 시도해 주세요.");
+        },
+      },
+    );
+
   const isNextEnabled = answer.trim().length > 0;
+
+  const handleNextFlow = () => {
+    if (!currentQuestion?.question?.question_id) return;
+    handleSubmitAnswer({
+      tId: Number(testId),
+      body: {
+        question_id: currentQuestion.question.question_id,
+        answer_text: answer,
+        skip: false,
+      },
+    });
+  };
+
+  const handleSkipFlow = () => {
+    if (!currentQuestion?.question?.question_id) return;
+    handleSubmitAnswer({
+      tId: Number(testId),
+      body: {
+        question_id: currentQuestion.question.question_id,
+        answer_text: "",
+        skip: true,
+      },
+    });
+  };
+
+  const handleBackFlow = () => {
+    queryClient.removeQueries({ queryKey: ["currentPdiQuestion", testId] });
+    navigate(-1);
+  };
 
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+        <span
+          className="text-subheadline font-semibold invisible"
+          aria-hidden="true"
+        >
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
@@ -26,29 +126,41 @@ const TestQuestionFormStep = () => {
         <img
           src={returnIcon}
           alt="뒤로가기"
-          onClick={() => navigate(-1)}
+          onClick={handleBackFlow}
           className="h-[14px] w-[14px] cursor-pointer"
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
       </div>
 
       <main className="flex flex-col px-side pb-[140px]">
-        <h2 className="mt-[24px] text-left text-[28px] font-[700] leading-[41px] text-[#FF6229] tracking-[0.37px]">
-          Q1
-        </h2>
+        {isPending || isFetching || isSubmitting ? (
+          <div className="text-center py-[100px] text-grey-400">
+            질문을 불러오는 중입니다...
+          </div>
+        ) : !currentQuestion || !currentQuestion.question ? (
+          <div className="text-center py-[100px] text-grey-400">
+            진행 중인 질문 데이터를 찾을 수 없습니다.
+          </div>
+        ) : (
+          <>
+            <h2 className="mt-[24px] text-left text-[28px] font-[700] leading-[41px] text-[#FF6229] tracking-[0.37px]">
+              Q{currentQuestion?.question?.current_step || 1}
+            </h2>
 
-        <h3 className="mt-[8px] text-left text-[20px] font-[700] leading-[25px] text-grey-800 tracking-[0.38px]">
-          아이가 친구들과 어울릴 때 어떤 모습인가요?
-        </h3>
+            <h3 className="mt-[8px] text-left text-[20px] font-[700] leading-[25px] text-grey-800 tracking-[0.38px]">
+              {currentQuestion?.question?.question_text}
+            </h3>
 
-        <div className="mt-[41px] flex h-[300px] w-full rounded-[8px] border border-solid border-grey-200 bg-white p-[16px] transition-all focus-within:border-grey-800">
-          <textarea
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            placeholder="답변을 입력해주세요"
-            className="h-full w-full resize-none bg-transparent p-0 outline-none text-body-1 text-grey-800 placeholder:text-grey-300 font-sans leading-[24px]"
-          />
-        </div>
+            <div className="mt-[41px] flex h-[300px] w-full rounded-[8px] border border-solid border-grey-200 bg-white p-[16px] transition-all focus-within:border-grey-800">
+              <textarea
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="답변을 입력해주세요"
+                className="h-full w-full resize-none bg-transparent p-0 outline-none text-body-1 text-grey-800 placeholder:text-grey-300 font-sans leading-[24px]"
+              />
+            </div>
+          </>
+        )}
 
         <div className="mt-[16px] flex w-full items-center gap-[8px] rounded-[8px] bg-warning-100 p-[8px]">
           <img
@@ -64,27 +176,31 @@ const TestQuestionFormStep = () => {
 
       <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-side pb-[32px] pt-[16px]">
         <div className="flex w-full items-center gap-[16px]">
-          {/* 건너뛰기 버튼 */}
           <ActionButton
             variant="lightGrey"
             size="xl"
             showIcon={false}
             className="flex-1"
-            onClick={() => navigate("/test-loading-step")}
+            disabled={isPending || isSubmitting || !currentQuestion?.question}
+            onClick={handleSkipFlow}
           >
             건너뛰기
           </ActionButton>
 
-          {/* 다음 버튼 */}
           <ActionButton
             variant="darkGrey"
             size="xl"
             showIcon={false}
-            disabled={!isNextEnabled}
+            disabled={
+              !isNextEnabled ||
+              isPending ||
+              isSubmitting ||
+              !currentQuestion?.question
+            }
             className="flex-1"
-            onClick={() => navigate("/test-result")}
+            onClick={handleNextFlow}
           >
-            다음
+            {currentQuestion?.completed ? "완료" : "다음"}
           </ActionButton>
         </div>
       </div>

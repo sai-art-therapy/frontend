@@ -1,23 +1,75 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 import { TextField } from "../../components/common/Textfield";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import timeIcon from "../../assets/icons/test/time.svg";
 
+import { useAppMutation } from "../../hooks/apiHooks";
+import { saveDrawingTime } from "../../apis/test/test";
+
 const TestTimeInputStep = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const testId = location.state?.testId;
+  const childId = location.state?.childId;
+  const childName = location.state?.childName || "아이";
+
   const [minutes, setMinutes] = useState<string>("");
   const [seconds, setSeconds] = useState<string>("");
 
   const isNextEnabled = minutes.trim().length > 0 || seconds.trim().length > 0;
 
+  const { mutate: saveTime, isPending } = useAppMutation<string, any>(
+    ({ tId, totalMinutes }: { tId: number; totalMinutes: number }) =>
+      saveDrawingTime(tId, totalMinutes),
+    {
+      onSuccess: (data) => {
+        console.log("소요 시간 저장 성공:", data);
+        navigate("/test-question-intro-step", {
+          state: {
+            testId,
+            childId,
+            childName,
+          },
+        });
+      },
+      onError: (error) => {
+        console.error("소요 시간 저장 실패:", error);
+        alert("시간을 저장하는 중 오류가 발생했습니다. 다시 시도해 주세요.");
+      },
+    },
+  );
+
+  const handleNext = () => {
+    if (!testId) {
+      alert("검사 정보가 존재하지 않습니다.");
+      navigate("/test");
+      return;
+    }
+
+    const totalSeconds = (Number(minutes) || 0) * 60 + (Number(seconds) || 0);
+
+    const finalMinutes = Math.round(totalSeconds / 60);
+
+    saveTime({ tId: Number(testId), totalMinutes: finalMinutes });
+  };
+
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+        <span
+          className="text-subheadline font-semibold invisible"
+          aria-hidden="true"
+        >
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
@@ -91,6 +143,7 @@ const TestTimeInputStep = () => {
             size="xl"
             showIcon={false}
             className="flex-1"
+            disabled={isPending}
             onClick={() => navigate("/test-third-step")}
           >
             건너뛰기
@@ -100,11 +153,11 @@ const TestTimeInputStep = () => {
             variant="darkGrey"
             size="xl"
             showIcon={false}
-            disabled={!isNextEnabled}
+            disabled={!isNextEnabled || isPending}
             className="flex-1"
-            onClick={() => navigate("/test-question-intro-step")}
+            onClick={handleNext}
           >
-            다음
+            {isPending ? "저장 중..." : "다음"}
           </ActionButton>
         </div>
       </div>

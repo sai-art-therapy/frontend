@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
 import returnIcon from "../../assets/icons/common/return.svg";
@@ -10,8 +10,34 @@ import greenCheckIcon from "../../assets/icons/test/greencheck.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
 import timeIcon from "../../assets/icons/test/time.svg";
 
+import { useAppMutation } from "../../hooks/apiHooks";
+import { postTest } from "../../apis/test/test";
+import type { PostTestRequest } from "../../types/test.type";
+
 const TestSecondStep = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const childId = location.state?.childId;
+
+  const { mutate: createTest, isPending } = useAppMutation<
+    any,
+    PostTestRequest
+  >((data: PostTestRequest) => postTest(data), {
+    onSuccess: (data) => {
+      const generatedTestId = data?.test_id || data?.testId || data?.id || data;
+      navigate("/test-third-step", {
+        state: {
+          childId: childId,
+          testId: generatedTestId,
+        },
+      });
+    },
+    onError: (error) => {
+      console.error("검사 생성 실패:", error);
+      alert("검사를 시작하는 중 오류가 발생했습니다. 다시 시도해 주세요.");
+    },
+  });
 
   const guideSteps = [
     {
@@ -28,19 +54,39 @@ const TestSecondStep = () => {
     },
   ];
 
+  const handleNextClick = () => {
+    if (!childId) {
+      alert("아이 정보가 유효하지 않습니다. 다시 진행해 주세요.");
+      navigate("/test");
+      return;
+    }
+
+    createTest({
+      child_id: Number(childId),
+      consent_agreed: true,
+      test_type: "HTP",
+    });
+  };
+
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
-      {/* 상태바 영역 */}
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+        <span
+          className="text-subheadline font-semibold invisible"
+          aria-hidden="true"
+        >
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
         </div>
       </div>
 
-      {/* 헤더 영역 */}
       <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-side py-[20px]">
         <img
           src={returnIcon}
@@ -52,14 +98,12 @@ const TestSecondStep = () => {
       </div>
 
       <main className="flex flex-col px-side pb-[120px]">
-        {/* 인디케이터 바 */}
         <div className="mt-[10px] flex w-full items-center gap-[16px]">
           <div className="h-[5px] flex-1 rounded-full bg-main-500"></div>
           <div className="h-[5px] flex-1 rounded-full bg-main-500"></div>
           <div className="h-[5px] flex-1 rounded-full bg-grey-200"></div>
         </div>
 
-        {/* 메인 타이틀 */}
         <img
           src={treeIcon}
           alt="나무"
@@ -108,7 +152,6 @@ const TestSecondStep = () => {
           </div>
         </div>
 
-        {/* 지침 목록 안내 */}
         <h3 className="mt-[24px] text-e-body-1 text-black">
           아이에게 이렇게 알려주세요
         </h3>
@@ -133,7 +176,6 @@ const TestSecondStep = () => {
           ))}
         </div>
 
-        {/* 하단 유의 사항 */}
         <div className="mt-[16px] mb-[20px] flex w-full items-center gap-[10px] rounded-sm bg-warning-100 p-[12px]">
           <img
             src={referIcon}
@@ -147,15 +189,15 @@ const TestSecondStep = () => {
         </div>
       </main>
 
-      {/* 하단 고정 버튼 */}
       <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-side pb-[32px] pt-[16px]">
         <ActionButton
           variant="darkGrey"
           className="w-full"
           showIcon={false}
-          onClick={() => navigate("/test-third-step")}
+          disabled={isPending}
+          onClick={handleNextClick}
         >
-          다음
+          {isPending ? "준비 중..." : "다음"}
         </ActionButton>
       </div>
     </div>

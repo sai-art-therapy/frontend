@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 import { FloatingButton } from "../../components/common/FloatingButton";
@@ -6,8 +5,24 @@ import { FloatingButton } from "../../components/common/FloatingButton";
 import lovelyIcon from "../../assets/icons/test/lovely.svg";
 import clipboardCloseIcon from "../../assets/icons/test/clipboard-close.svg";
 
+import { useAppQuery } from "../../hooks/apiHooks";
+import { getChildren } from "../../api/mypage";
+
 const Test = () => {
   const navigate = useNavigate();
+
+  const { data: children } = useAppQuery(["children"], getChildren);
+
+  const handleStartClick = () => {
+    if (!children || children.length === 0) {
+      alert("등록된 자녀가 없습니다. 자녀를 먼저 등록해 주세요.");
+      return;
+    }
+
+    navigate("/test-start", {
+      state: { childId: children[0].child_id },
+    });
+  };
 
   return (
     <div className="w-full bg-white font-sans relative">
@@ -63,7 +78,7 @@ const Test = () => {
             size="md"
             showIcon={false}
             className="w-full"
-            onClick={() => navigate("/test-start")}
+            onClick={handleStartClick}
           >
             시작하기
           </ActionButton>
