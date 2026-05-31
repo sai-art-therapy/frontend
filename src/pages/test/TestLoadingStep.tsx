@@ -1,19 +1,75 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import imagecheckIcon from "../../assets/icons/test/imagecheck.svg";
+import { useAppMutation, useAppQuery } from "../../hooks/apiHooks";
+import { analyzeTest } from "../../apis/test/test";
+import { getChildren } from "../../api/mypage";
 
 const TestLoadingStep = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const testId = location.state?.testId;
+  const childId = location.state?.childId;
+
   const [progress, setProgress] = useState(0);
+  const [childName, setChildName] = useState("아이");
+
+  const { data: childrenList } = useAppQuery(["children"], getChildren, {
+    enabled: !!childId,
+  });
+
+  const { mutate: startAnalyze } = useAppMutation<string, any>(
+    (tId: number) => analyzeTest(tId),
+    {
+      onSuccess: (data) => {
+        console.log("분석 요청 성공:", data);
+        setProgress(100);
+        setTimeout(() => {
+          navigate("/test-time-input-step", {
+            state: {
+              testId,
+              childId,
+              childName,
+            },
+          });
+        }, 800);
+      },
+      onError: (error) => {
+        console.error("분석 요청 실패:", error);
+        alert("이미지 분석을 시작하지 못했습니다. 다시 시도해 주세요.");
+        navigate(-1);
+      },
+    },
+  );
 
   useEffect(() => {
+    if (!testId) {
+      alert("검사 정보가 유효하지 않습니다.");
+      navigate("/test");
+      return;
+    }
+
+    startAnalyze(Number(testId));
+
     const timer = setTimeout(() => {
-      setProgress(100);
+      setProgress(90);
     }, 100);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [testId]);
+
+  useEffect(() => {
+    if (childrenList && childId) {
+      const targetChild = childrenList.find(
+        (child) => child.child_id === Number(childId),
+      );
+      if (targetChild) {
+        setChildName(targetChild.name);
+      }
+    }
+  }, [childrenList, childId]);
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-white font-sans">
@@ -31,8 +87,16 @@ const TestLoadingStep = () => {
       </style>
 
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+        <span
+          className="text-subheadline font-semibold invisible"
+          aria-hidden="true"
+        >
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
@@ -52,7 +116,7 @@ const TestLoadingStep = () => {
         </div>
 
         <h1 className="mt-[48px] line-clamp-2 text-center text-[24px] font-bold leading-[34px] tracking-[0.36px] text-grey-900 whitespace-pre-line">
-          길동이의 그림을{"\n"}꼼꼼히 살펴보고 있어요
+          {childName}의 그림을{"\n"}꼼꼼히 살펴보고 있어요
         </h1>
 
         <p className="mt-[8px] text-center text-subheadline text-grey-600">
@@ -62,10 +126,10 @@ const TestLoadingStep = () => {
         {/* 진행바 */}
         <div className="mt-[48px] h-[8px] w-[280px] overflow-hidden rounded-full bg-grey-200">
           <div
-            className="h-full bg-main-500 transition-all ease-linear"
+            className="h-full bg-main-500 transition-all ease-out"
             style={{
               width: `${progress}%`,
-              transitionDuration: "30000ms",
+              transitionDuration: progress === 100 ? "500ms" : "30000ms",
             }}
           ></div>
         </div>

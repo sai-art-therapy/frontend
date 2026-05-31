@@ -23,6 +23,12 @@ export const uploadTestImage = async (testId: number, file: File) => {
 };
 
 export const analyzeTest = async (testId: number) => {
-  const response = await axiosInstance.post<string>(`/tests/${testId}/analyze`);
+  const response = await axiosInstance.post<string>(
+    `/tests/${testId}/analyze`,
+    {},
+    {
+      timeout: 90000,
+    },
+  );
   return response.data;
 };

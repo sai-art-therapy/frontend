@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 import { TextField } from "../../components/common/Textfield";
 
@@ -8,16 +8,43 @@ import timeIcon from "../../assets/icons/test/time.svg";
 
 const TestTimeInputStep = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const testId = location.state?.testId;
+  const childId = location.state?.childId;
+  const childName = location.state?.childName || "아이";
+
   const [minutes, setMinutes] = useState<string>("");
   const [seconds, setSeconds] = useState<string>("");
 
   const isNextEnabled = minutes.trim().length > 0 || seconds.trim().length > 0;
 
+  const handleNext = () => {
+    const totalSeconds = (Number(minutes) || 0) * 60 + (Number(seconds) || 0);
+
+    navigate("/test-question-intro-step", {
+      state: {
+        testId,
+        childId,
+        childName,
+        duration: totalSeconds,
+      },
+    });
+  };
+
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
       <div className="flex w-full items-center justify-between px-[24px] pb-[19px] pt-[21px]">
-        <span className="text-subheadline font-semibold invisible" aria-hidden="true">9:41</span>
-        <div className="flex items-center gap-[5px] invisible" aria-hidden="true">
+        <span
+          className="text-subheadline font-semibold invisible"
+          aria-hidden="true"
+        >
+          9:41
+        </span>
+        <div
+          className="flex items-center gap-[5px] invisible"
+          aria-hidden="true"
+        >
           <div className="h-[10px] w-[17px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[15px] rounded-xs bg-black"></div>
           <div className="h-[11px] w-[24px] rounded-xs bg-black"></div>
@@ -102,7 +129,7 @@ const TestTimeInputStep = () => {
             showIcon={false}
             disabled={!isNextEnabled}
             className="flex-1"
-            onClick={() => navigate("/test-question-intro-step")}
+            onClick={handleNext}
           >
             다음
           </ActionButton>
