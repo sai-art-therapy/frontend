@@ -1,4 +1,3 @@
-import React from "react";
 import floatingbuttonIcon from "../../assets/icons/common/floatingbutton.svg";
 
 interface FloatingButtonProps {

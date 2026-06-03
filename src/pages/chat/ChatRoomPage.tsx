@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { ReportSummaryCard } from "../../components/chat/ReportSummaryCard";
@@ -29,7 +29,7 @@ const ChatRoomPage = () => {
   const { reportId } = useParams<{ reportId: string }>();
   const numericSessionId = Number(reportId) || 0;
 
-  const [hasReport, setHasReport] = useState<boolean>(false);
+  const [hasReport] = useState<boolean>(false);
 
   const [currentReport, setCurrentReport] = useState({
     name: "박카피",

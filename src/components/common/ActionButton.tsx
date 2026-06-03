@@ -1,4 +1,4 @@
-import React, { type ButtonHTMLAttributes, type ReactNode } from "react";
+import React, { type ButtonHTMLAttributes } from "react";
 import plusIcon from "../../assets/icons/common/plus.svg?url";
 
 // 12가지 색상 타입 정의
