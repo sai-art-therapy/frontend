@@ -54,15 +54,19 @@ const TestQuestionFormStep = () => {
         body: { question_id: number; answer_text: string; skip: boolean };
       }) => submitPdiAnswer(tId, body),
       {
-        onSuccess: async () => {
+        onSuccess: async (data) => {
           setAnswer("");
 
-          const { data: latestData } = await refetch();
-
-          if (latestData?.completed) {
+          if (data?.completed || currentQuestion?.completed) {
             navigate("/test-loading-step", {
               state: { testId, childId, childName },
             });
+          } else {
+            try {
+              await refetch();
+            } catch (e) {
+              console.error(e);
+            }
           }
         },
         onError: (error) => {
