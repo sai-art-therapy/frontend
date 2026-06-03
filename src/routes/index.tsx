@@ -28,6 +28,15 @@ import PreparationPage from "../pages/MyPage/PreparationPage";
 
 import HomePage from "../pages/home/HomePage";
 
+const RootIndex = () => {
+  const token = localStorage.getItem("access_token");
+  return token ? (
+    <Navigate to="/home" replace />
+  ) : (
+    <Navigate to="/login" replace />
+  );
+};
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -35,7 +44,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Navigate to="/login" replace />,
+        element: <RootIndex />,
       },
       {
         path: "/login",
