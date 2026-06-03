@@ -23,6 +23,7 @@ const TestQuestionFormStep = () => {
   const childName = location.state?.childName || "아이";
 
   const [answer, setAnswer] = useState<string>("");
+  const [isDone, setIsDone] = useState<boolean>(false);
 
   const {
     data: currentQuestion,
@@ -33,16 +34,20 @@ const TestQuestionFormStep = () => {
     ["currentPdiQuestion", testId],
     () => getCurrentPdiQuestion(Number(testId)),
     {
-      enabled: !!testId,
+      enabled: !!testId && !isDone,
     },
   );
+
+  const isLastQuestion =
+    currentQuestion?.completed === true ||
+    currentQuestion?.question?.current_step === 10;
 
   useEffect(() => {
     if (!testId) {
       alert("검사 정보가 존재하지 않습니다.");
       navigate("/test");
     }
-  }, [testId]);
+  }, [testId, navigate]);
 
   const { mutate: handleSubmitAnswer, isPending: isSubmitting } =
     useAppMutation<any, any>(
@@ -57,8 +62,21 @@ const TestQuestionFormStep = () => {
         onSuccess: async (data) => {
           setAnswer("");
 
-          if (data?.completed || currentQuestion?.completed) {
-            navigate("/test-loading-step", {
+          if (
+            data?.completed === true ||
+            data?.pdi_status === "completed" ||
+            isLastQuestion
+          ) {
+            setIsDone(true);
+
+            await queryClient.cancelQueries({
+              queryKey: ["currentPdiQuestion", testId],
+            });
+            queryClient.removeQueries({
+              queryKey: ["currentPdiQuestion", testId],
+            });
+
+            navigate("/test-result", {
               state: { testId, childId, childName },
             });
           } else {
@@ -187,7 +205,7 @@ const TestQuestionFormStep = () => {
             className="flex-1"
             onClick={handleNextFlow}
           >
-            {currentQuestion?.completed ? "완료" : "다음"}
+            {isLastQuestion ? "완료" : "다음"}
           </ActionButton>
         </div>
       </div>
