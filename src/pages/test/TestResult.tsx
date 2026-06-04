@@ -7,6 +7,7 @@ import {
   getReports,
   generateReport,
 } from "../../apis/test/test";
+import { createChatSession } from "../../apis/chat/chat";
 import type { ReportListItem } from "../../types/test.type";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -88,7 +89,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     if (isSharedView) return;
     if (testId && !resolvedReportId && !hasRequestedReport.current) {
       hasRequestedReport.current = true;
-
       generateReport(Number(testId))
         .then(() => console.log("🚀 [성공] 백엔드에 AI 리포트 생성 요청 완료!"))
         .catch((err) => console.error("❌ [실패] 리포트 생성 요청 에러:", err));
@@ -111,11 +111,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
   useEffect(() => {
     if (!resolvedReportId && Array.isArray(reportsList)) {
       const targetTestId = Number(testId);
-
-      console.log("=== [폴링 디버깅] ===");
-      console.log("찾고 있는 현재 Test ID:", targetTestId);
-      console.log("백엔드 리포트 목록 데이터:", reportsList);
-
       const match = reportsList.find((r) => Number(r.test_id) === targetTestId);
 
       if (match?.report_id) {
@@ -124,10 +119,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           match.report_id,
         );
         setResolvedReportId(match.report_id);
-      } else {
-        console.log(
-          "⏳ 아직 목록에 현재 Test ID와 매칭되는 리포트가 없습니다. 계속 대기 중...",
-        );
       }
     }
   }, [reportsList, resolvedReportId, testId]);
@@ -167,7 +158,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
   const handleImageLoad = (e: SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     const { naturalWidth, naturalHeight, width, height } = img;
-
     if (!naturalWidth || !naturalHeight) return;
 
     const imgRatio = naturalWidth / naturalHeight;
@@ -206,19 +196,166 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     return "tree";
   };
 
-  const handleGoToChat = () => {
+  const currentKey = getTabKey(activeTab);
+  const reportAny = reportData as any;
+
+  const childName = isSharedView
+    ? queryChildName
+    : reportData?.child?.name || "아이";
+
+  const age = isSharedView
+    ? queryAge
+      ? queryAge.startsWith("만")
+        ? queryAge
+        : `만 ${queryAge}세`
+      : ""
+    : reportData?.child?.age
+      ? `만 ${reportData.child.age}세`
+      : "";
+
+  const gender = isSharedView
+    ? queryGender === "male" || queryGender === "남아"
+      ? "남아"
+      : queryGender === "female" || queryGender === "여아"
+        ? "여아"
+        : ""
+    : reportData?.child?.gender === "male"
+      ? "남아"
+      : reportData?.child?.gender === "female"
+        ? "여아"
+        : "";
+
+  const rawDate = reportData?.test?.test_date;
+  const testDate = isSharedView
+    ? queryTestDate
+    : rawDate
+      ? `${rawDate.split("T")[0].replace(/-/g, ".")} 검사`
+      : reportData?.test?.test_date_label || "";
+
+  const summaryText = isSharedView
+    ? querySummary
+    : reportData?.summary?.one_line_summary ||
+      "그림 전반에 안정감과 현실 접촉이 잘 표현되었습니다.";
+
+  const activeTabContent = isSharedView
+    ? {
+        interpretation:
+          currentKey === "house"
+            ? queryHouseInterp
+            : currentKey === "person"
+              ? queryPersonInterp
+              : queryTreeInterp,
+        status:
+          currentKey === "house"
+            ? queryHouseStatus
+            : currentKey === "person"
+              ? queryPersonStatus
+              : queryTreeStatus,
+        tags: [],
+        observations: [],
+        positive_note: "",
+      }
+    : reportData?.tabs?.[currentKey];
+
+  const serverBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const fallbackImageUrl = "https://placehold.co/370x200?text=No+Image";
+
+  const rawImgPath = isSharedView
+    ? queryImg
+    : reportData?.images?.original_image_path ||
+      reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey] ||
+      reportData?.images?.result_image_path ||
+      reportAny?.result_image_path ||
+      reportAny?.image_path ||
+      reportAny?.test?.result_image_path ||
+      reportAny?.test?.image_path ||
+      reportAny?.test?.result_image_url ||
+      reportAny?.test?.image_url;
+
+  const imageUrl = (() => {
+    if (isSharedView) return rawImgPath || fallbackImageUrl;
+    const userLocalImage = sessionStorage.getItem("user_uploaded_image");
+    if (!rawImgPath || rawImgPath.includes("Not Found"))
+      return userLocalImage || fallbackImageUrl;
+    if (rawImgPath.startsWith("http://") || rawImgPath.startsWith("https://"))
+      return rawImgPath;
+
+    const baseUrl = serverBaseUrl ? serverBaseUrl.replace(/\/$/, "") : "";
+    const cleanPath = rawImgPath.startsWith("/")
+      ? rawImgPath
+      : `/${rawImgPath}`;
+    return baseUrl
+      ? `${baseUrl}${cleanPath}`
+      : userLocalImage || fallbackImageUrl;
+  })();
+
+  const detections = isSharedView
+    ? []
+    : reportAny?.analysis?.yolo_result_json?.display_detections || [];
+  const currentDetection = detections.find((d: any) => d.type === currentKey);
+
+  const recommendations = isSharedView
+    ? queryRecoms
+    : reportData?.recommendations && reportData.recommendations.length > 0
+      ? reportData.recommendations
+      : reportAny?.raw_report?.report_json?.recommendations || [];
+
+  const handleGoToChat = async () => {
     if (!resolvedReportId) {
       alert("리포트 정보가 존재하지 않아 채팅방을 이동할 수 없습니다.");
       return;
     }
 
-    navigate(`/chat/report/${resolvedReportId}`, {
-      state: {
-        reportId: resolvedReportId,
-        testId: testId,
-        childName: childName,
-      },
-    });
+    const currentTestId =
+      testId ||
+      (queryTestId ? Number(queryTestId) : undefined) ||
+      reportAny?.test_id ||
+      reportAny?.test?.id ||
+      reportAny?.htp_test_id ||
+      reportAny?.raw_report?.test_id;
+
+    const childId =
+      reportAny?.child?.id ||
+      reportAny?.child?.child_id ||
+      reportAny?.child_id ||
+      0;
+
+    if (!currentTestId) {
+      console.warn("⚠️ 디버깅용 현재 데이터 객체 상태 확인:", reportAny);
+      alert("검사 정보가 존재하지 않아 채팅방을 개설할 수 없습니다.");
+      return;
+    }
+
+    try {
+      const responseData = await createChatSession({
+        child_id: Number(childId),
+        htp_test_id: Number(currentTestId),
+        title: `${childName}의 심리 분석 상담방`,
+      });
+
+      const serverSessionId =
+        typeof responseData === "object"
+          ? (responseData as any).session_id || (responseData as any).id
+          : responseData;
+
+      if (!serverSessionId) {
+        throw new Error("채팅 세션 ID를 발급받지 못했습니다.");
+      }
+
+      navigate(`/chat/report/${serverSessionId}`, {
+        state: {
+          sessionId: serverSessionId,
+          reportId: resolvedReportId,
+          testId: currentTestId,
+          childName,
+        },
+      });
+    } catch (error) {
+      console.error("❌ 채팅 세션 생성 실패:", error);
+      alert(
+        "채팅방을 개설하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    }
   };
 
   const handleShare = async () => {
@@ -234,10 +371,10 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     const params = new URLSearchParams({
       reportId: String(currentReportId),
       testId: currentTestId ? String(currentTestId) : "",
-      childName: childName,
-      age: age,
+      childName,
+      age,
       gender: reportData?.child?.gender || searchParams.get("gender") || "",
-      testDate: testDate,
+      testDate,
       summary: summaryText,
       img: imageUrl,
       houseInterp: reportData?.tabs?.house?.interpretation || queryHouseInterp,
@@ -251,7 +388,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     });
 
     const fullShareUrl = `${baseShareUrl}?${params.toString()}`;
-
     const shareData = {
       title: `${childName}의 마음 이야기 리포트`,
       text: "우리 아이의 심리 분석 결과를 확인해 보세요!",
@@ -261,17 +397,16 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     if (navigator.share) {
       try {
         await navigator.share(shareData);
-        console.log("🔗 고유 리포트 링크 공유 성공");
       } catch (error) {
         if ((error as Error).name !== "AbortError") {
-          console.error("❌ 공유 중 오류가 발생했습니다:", error);
+          console.error("❌ 공유 중 오류 발생:", error);
         }
       }
     } else {
       try {
         await navigator.clipboard.writeText(fullShareUrl);
         alert(
-          "고유 리포트 링크가 클립보드에 복사되었습니다! 카카오톡 등에 붙여넣기(Ctrl+V) 하세요.",
+          "고유 리포트 링크가 클립보드에 복사되었습니다! 원하는 곳에 붙여넣기 하세요.",
         );
       } catch (err) {
         console.error("❌ 클립보드 복사 실패:", err);
@@ -313,7 +448,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
 
       pdf.save(`${childName}_마음_이야기_리포트.pdf`);
     } catch (error) {
-      console.error("❌ PDF 생성 중 오류가 발생했습니다:", error);
+      console.error("❌ PDF 생성 중 오류 발생:", error);
       alert("PDF 저장 중 오류가 발생했습니다. 다시 시도해 주세요.");
     } finally {
       setIsPdfDownloading(false);
@@ -369,125 +504,12 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     );
   }
 
-  const reportAny = reportData as any;
-
-  const childName = isSharedView
-    ? queryChildName
-    : reportData?.child?.name || "아이";
-
-  const age = isSharedView
-    ? queryAge
-      ? queryAge.startsWith("만")
-        ? queryAge
-        : `만 ${queryAge}세`
-      : ""
-    : reportData?.child?.age
-      ? `만 ${reportData.child.age}세`
-      : "";
-
-  const gender = isSharedView
-    ? queryGender === "male" || queryGender === "남아"
-      ? "남아"
-      : queryGender === "female" || queryGender === "여아"
-        ? "여아"
-        : ""
-    : reportData?.child?.gender === "male"
-      ? "남아"
-      : reportData?.child?.gender === "female"
-        ? "여아"
-        : "";
-
-  const rawDate = reportData?.test?.test_date;
-  const testDate = isSharedView
-    ? queryTestDate
-    : rawDate
-      ? `${rawDate.split("T")[0].replace(/-/g, ".")} 검사`
-      : reportData?.test?.test_date_label || "";
-
-  const summaryText = isSharedView
-    ? querySummary
-    : reportData?.summary?.one_line_summary ||
-      "그림 전반에 안정감과 현실 접촉이 잘 표현되었습니다.";
-
-  const currentKey = getTabKey(activeTab);
-
-  const activeTabContent = isSharedView
-    ? {
-        interpretation:
-          currentKey === "house"
-            ? queryHouseInterp
-            : currentKey === "person"
-              ? queryPersonInterp
-              : queryTreeInterp,
-        status:
-          currentKey === "house"
-            ? queryHouseStatus
-            : currentKey === "person"
-              ? queryPersonStatus
-              : queryTreeStatus,
-        tags: [],
-        observations: [],
-        positive_note: "",
-      }
-    : reportData?.tabs?.[currentKey];
-
-  const serverBaseUrl = import.meta.env.VITE_API_BASE_URL;
-  const fallbackImageUrl = "https://placehold.co/370x200?text=No+Image";
-
-  const rawImgPath = isSharedView
-    ? queryImg
-    : reportData?.images?.original_image_path ||
-      reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey] ||
-      reportData?.images?.result_image_path ||
-      reportAny?.result_image_path ||
-      reportAny?.image_path ||
-      reportAny?.test?.result_image_path ||
-      reportAny?.test?.image_path ||
-      reportAny?.test?.result_image_url ||
-      reportAny?.test?.image_url;
-
-  const imageUrl = (() => {
-    if (isSharedView) return rawImgPath || fallbackImageUrl;
-
-    const userLocalImage = sessionStorage.getItem("user_uploaded_image");
-
-    if (!rawImgPath || rawImgPath.includes("Not Found")) {
-      return userLocalImage || fallbackImageUrl;
-    }
-
-    if (rawImgPath.startsWith("http://") || rawImgPath.startsWith("https://")) {
-      return rawImgPath;
-    }
-
-    const baseUrl = serverBaseUrl ? serverBaseUrl.replace(/\/$/, "") : "";
-    const cleanPath = rawImgPath.startsWith("/")
-      ? rawImgPath
-      : `/${rawImgPath}`;
-    const parsedUrl = baseUrl ? `${baseUrl}${cleanPath}` : fallbackImageUrl;
-
-    if (parsedUrl === fallbackImageUrl && userLocalImage) {
-      return userLocalImage;
-    }
-
-    return parsedUrl;
-  })();
-
-  const detections = isSharedView
-    ? []
-    : reportAny?.analysis?.yolo_result_json?.display_detections || [];
-  const currentDetection = detections.find((d: any) => d.type === currentKey);
-
-  const recommendations = isSharedView
-    ? queryRecoms
-    : reportData?.recommendations && reportData.recommendations.length > 0
-      ? reportData.recommendations
-      : reportAny?.raw_report?.report_json?.recommendations || [];
-
   return (
     <div
       ref={reportRef}
       className="flex min-h-screen w-full flex-col bg-white font-sans pb-[40px]"
     >
+      {/* 헤더 섹션 */}
       <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-[24px] py-[20px]">
         {!isSharedView && (
           <img
@@ -501,6 +523,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
       </div>
 
       <main className="flex flex-col px-[24px]">
+        {/* 안내사항 */}
         <div className="mt-[4px] flex w-full items-center gap-[10px] rounded-[8px] bg-warning-100 p-[8px]">
           <img src={referIcon} alt="참고" className="h-[24px] w-[24px]" />
           <p className="text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-grey-900">
@@ -509,6 +532,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           </p>
         </div>
 
+        {/* 타이틀 및 메타 프로필 */}
         <div className="mt-[16px] flex items-start gap-[16px]">
           <img
             src={heartDocumentIcon}
@@ -543,10 +567,10 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
       <div className="mt-[16px] h-[13px] w-full bg-grey-100" />
 
       <main className="flex flex-col px-[24px]">
+        {/* 종합 요약 */}
         <h3 className="mt-[16px] text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-grey-900">
           종합 요약을 해드릴게요
         </h3>
-
         <div className="mt-[16px] flex w-full items-start gap-[8px] rounded-[12px] bg-grey-50 px-[8px] py-[16px]">
           <img
             src={alertIcon}
@@ -558,10 +582,10 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           </p>
         </div>
 
+        {/* 탭 인터페이스 분기 */}
         <h3 className="mt-[32px] text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-grey-900">
           그림 속 요소를 하나씩 살펴봤어요
         </h3>
-
         <div className="mt-[16px] flex h-[40px] w-full items-center rounded-full bg-grey-100 p-[4px]">
           {(["집", "사람", "나무"] as const).map((tab) => (
             <button
@@ -576,6 +600,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           ))}
         </div>
 
+        {/* 원본 캔버스 이미지 스크린 및 바운딩 박스 오버레이 */}
         <div className="relative mt-[8px] flex h-[200px] w-full items-center justify-center overflow-hidden rounded-[12px] bg-grey-200">
           <img
             src={imageUrl}
@@ -584,7 +609,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
             onLoad={handleImageLoad}
             onError={(e) => {
               console.warn(
-                "⚠️ 이미지 로드 실패, 보관된 로컬 이미지 혹은 No Image로 대체됩니다. 시도된 URL:",
+                "⚠️ 이미지 로드 실패, 대체 이미지를 적용합니다. URL:",
                 imageUrl,
               );
               const userLocalImage = sessionStorage.getItem(
@@ -615,7 +640,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
                   padding: "4px 6px",
                   justifyContent: "center",
                   alignItems: "center",
-                  gap: "10px",
                   borderRadius: "4px",
                   background: "#F04438",
                   color: "#FFF",
@@ -628,7 +652,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
               >
                 {currentDetection.label}
               </div>
-
               <div
                 style={{
                   width: "100%",
@@ -642,6 +665,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           )}
         </div>
 
+        {/* 정밀 진단 소견 피드백 카드 */}
         <div className="mt-[8px] flex w-full flex-col gap-[8px] rounded-[12px] border border-grey-200 bg-white p-[12px]">
           <div className="flex w-full items-start gap-[16px]">
             <div className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[8px] bg-error-100">
@@ -649,8 +673,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
                 {activeTab === "집" ? "🏠" : activeTab === "사람" ? "👤" : "🌳"}
               </span>
             </div>
-
-            <div className="flex flex-1 flex-col gap-0">
+            <div className="flex flex-1 flex-col">
               <div className="flex w-full items-center justify-between">
                 <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-grey-900">
                   {activeTab === "집"
@@ -718,10 +741,10 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           )}
         </div>
 
+        {/* 가이드 피드백 및 외부 솔루션 카드 추천 */}
         <h3 className="mt-[32px] text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-grey-900">
           이런 활동을 해보세요
         </h3>
-
         <div className="mt-[16px] flex w-full flex-col gap-[8px]">
           {recommendations.length > 0 ? (
             recommendations.map(
@@ -753,7 +776,8 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           )}
         </div>
 
-        <div className="mt-[8px] flex w-full flex-col items-start gap-[10px] rounded-[12px] bg-warning-100 p-[12px]">
+        {/* 임상 도메인 가이드 제안 단락 */}
+        <div className="mt-[16px] flex w-full flex-col items-start gap-[10px] rounded-[12px] bg-warning-100 p-[12px]">
           <div className="flex items-center gap-[8px]">
             <img src={personIcon} alt="전문가" className="h-[24px] w-[24px]" />
             <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-grey-900">
@@ -766,6 +790,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           </p>
         </div>
 
+        {/* AI 연동 인터랙션 트리거 버튼 */}
         {!isSharedView && (
           <div className="mt-[32px] flex w-full flex-col items-center justify-center gap-[16px] rounded-[12px] border border-main-200 bg-white p-[16px]">
             <div className="flex items-center gap-[8px]">
@@ -778,7 +803,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
                 아이에 대한 궁금한 점이 있다면
               </span>
             </div>
-
             <ActionButton
               variant="lightOrange"
               size="md"
@@ -791,6 +815,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           </div>
         )}
 
+        {/* 액션 제어 하단 풋바 */}
         <div className="mb-[40px] mt-[16px] flex w-full items-center gap-[14px]">
           <button
             onClick={handleShare}
