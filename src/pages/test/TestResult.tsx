@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"; // 1. useRef 추가
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 import { useAppQuery } from "../../hooks/apiHooks";
@@ -83,7 +83,7 @@ const TestResult = () => {
       const timer = setTimeout(() => {
         console.error("❌ 90초 대기 시간 초과: AI 리포트 생성 타임아웃");
         setIsTimedOut(true);
-      }, 90000); // 90000ms = 90초
+      }, 90000);
       return () => clearTimeout(timer);
     }
   }, [resolvedReportId, testId]);
@@ -182,7 +182,6 @@ const TestResult = () => {
   const testDate = rawDate
     ? `${rawDate.split("T")[0].replace(/-/g, ".")} 검사`
     : reportData?.test?.test_date_label || "";
-
   const summaryText =
     reportData?.summary?.one_line_summary ||
     "그림 전반에 안정감과 현실 접촉이 잘 표현되었습니다.";
@@ -196,12 +195,36 @@ const TestResult = () => {
   const rawImgPath =
     reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey] ||
     reportData?.images?.result_image_path ||
-    reportData?.test?.result_image_path;
+    reportData?.images?.original_image_path ||
+    reportAny?.test?.result_image_path ||
+    reportAny?.test?.image_path ||
+    reportAny?.test?.result_image_url ||
+    reportAny?.test?.image_url;
 
-  const imageUrl =
-    serverBaseUrl && rawImgPath
-      ? `${serverBaseUrl}/${rawImgPath}`
-      : fallbackImageUrl;
+  const imageUrl = (() => {
+    const userLocalImage = sessionStorage.getItem("user_uploaded_image");
+
+    if (!rawImgPath || rawImgPath.includes("Not Found")) {
+      return userLocalImage || fallbackImageUrl;
+    }
+
+    if (rawImgPath.startsWith("http://") || rawImgPath.startsWith("https://")) {
+      return rawImgPath;
+    }
+
+    const baseUrl = serverBaseUrl ? serverBaseUrl.replace(/\/$/, "") : "";
+    const cleanPath = rawImgPath.startsWith("/")
+      ? rawImgPath
+      : `/${rawImgPath}`;
+
+    const parsedUrl = baseUrl ? `${baseUrl}${cleanPath}` : fallbackImageUrl;
+
+    if (parsedUrl === fallbackImageUrl && userLocalImage) {
+      return userLocalImage;
+    }
+
+    return parsedUrl;
+  })();
 
   const recommendations =
     reportData?.recommendations && reportData.recommendations.length > 0
@@ -302,14 +325,22 @@ const TestResult = () => {
           ))}
         </div>
 
-        {/* 그림 이미지 영역 (YOLO 결과 이미지 - 바운딩박스 포함) */}
+        {/* 그림 이미지 영역 */}
         <div className="relative mt-[8px] flex h-[200px] w-full items-center justify-center overflow-hidden rounded-[12px] bg-grey-200">
           <img
             src={imageUrl}
             alt={`${activeTab} 분석 AI 이미지`}
             className="h-full w-full object-contain"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = fallbackImageUrl;
+              console.warn(
+                "⚠️ 이미지 로드 실패, 보관된 로컬 이미지 혹은 No Image로 대체됩니다. 시도된 URL:",
+                imageUrl,
+              );
+              const userLocalImage = sessionStorage.getItem(
+                "user_uploaded_image",
+              );
+              (e.target as HTMLImageElement).src =
+                userLocalImage || fallbackImageUrl;
             }}
           />
         </div>

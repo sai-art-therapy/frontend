@@ -37,6 +37,12 @@ const TestThirdStep = () => {
         console.log("그림 이미지 업로드 성공:", data);
         const uploadedImageUrl = typeof data === "string" ? data : previewUrl;
 
+        if (selectedFile) {
+          const blobUrl = URL.createObjectURL(selectedFile);
+          sessionStorage.setItem("user_uploaded_image", blobUrl);
+          console.log("임시 로컬 이미지 세션 저장 완료:", blobUrl);
+        }
+
         navigate("/test-loading-step", {
           state: {
             childId,
@@ -358,15 +364,17 @@ const TestThirdStep = () => {
       </main>
 
       <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-side pb-[32px] pt-[16px]">
-        <ActionButton
-          variant="darkGrey"
-          disabled={!selectedFile || isPending}
-          className="w-full"
-          showIcon={false}
-          onClick={handleUploadSubmit}
-        >
-          {isPending ? "이미지 분석 요청 중..." : "분석 시작하기"}
-        </ActionButton>
+        <div className="flex w-full items-center gap-[16px]">
+          <ActionButton
+            variant="darkGrey"
+            disabled={!selectedFile || isPending}
+            className="w-full"
+            showIcon={false}
+            onClick={handleUploadSubmit}
+          >
+            {isPending ? "이미지 분석 요청 중..." : "분석 시작하기"}
+          </ActionButton>
+        </div>
       </div>
     </div>
   );
