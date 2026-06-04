@@ -16,6 +16,7 @@ const TestTimeInputStep = () => {
   const testId = location.state?.testId;
   const childId = location.state?.childId;
   const childName = location.state?.childName || "아이";
+  const reportId = location.state?.reportId;
 
   const [minutes, setMinutes] = useState<string>("");
   const [seconds, setSeconds] = useState<string>("");
@@ -36,6 +37,7 @@ const TestTimeInputStep = () => {
             testId,
             childId,
             childName,
+            reportId,
           },
         });
       },

@@ -3,6 +3,7 @@ import type {
   PostTestRequest,
   PostTestResponse,
   ReportDetailResponse,
+  ReportListItem,
 } from "../../types/test.type";
 
 export const postTest = async (data: PostTestRequest) => {
@@ -115,9 +116,22 @@ export const skipAllPdiQuestions = async (testId: number) => {
   return response.data;
 };
 
+export const getReports = async () => {
+  const response = await axiosInstance.get<ReportListItem[]>("/reports");
+  return response.data;
+};
+
 export const getReportDetail = async (reportId: number) => {
   const response = await axiosInstance.get<ReportDetailResponse>(
     `/reports/${reportId}`,
+  );
+  return response.data;
+};
+
+export const generateReport = async (testId: number) => {
+  const response = await axiosInstance.post<string>(
+    `/tests/${testId}/generate-report`,
+    {},
   );
   return response.data;
 };

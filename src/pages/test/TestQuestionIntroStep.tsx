@@ -21,6 +21,7 @@ const TestQuestionIntroStep = () => {
   const testId = location.state?.testId;
   const childId = location.state?.childId;
   const childName = location.state?.childName || "아이";
+  const reportId = location.state?.reportId;
 
   const [questions, setQuestions] = useState<PdiQuestion[]>([]);
 
@@ -48,7 +49,7 @@ const TestQuestionIntroStep = () => {
     onSuccess: () => {
       console.log("PDI 전체 건너뛰기 성공");
       navigate("/test-result", {
-        state: { testId, childId, childName },
+        state: { testId, childId, childName, reportId },
       });
     },
     onError: (error) => {
@@ -167,7 +168,7 @@ const TestQuestionIntroStep = () => {
             disabled={isPending || isSkipping || questions.length === 0}
             onClick={() =>
               navigate("/test-question-form-step", {
-                state: { testId, childId, childName, questions },
+                state: { testId, childId, childName, questions, reportId },
               })
             }
           >

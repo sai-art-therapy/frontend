@@ -25,6 +25,8 @@ const TestLoadingStep = () => {
     {
       onSuccess: (data) => {
         console.log("분석 요청 성공:", data);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const reportId = (data as any)?.report_id;
         setProgress(100);
         setTimeout(() => {
           navigate("/test-time-input-step", {
@@ -32,6 +34,7 @@ const TestLoadingStep = () => {
               testId,
               childId,
               childName,
+              reportId,
             },
           });
         }, 800);

@@ -81,4 +81,39 @@ export interface ReportDetailResponse {
     person: string;
     debug_all: string;
   };
+  analysis?: {
+    yolo_result_json?: {
+      result_image_paths?: {
+        all: string;
+        tree: string;
+        house: string;
+        person: string;
+        debug_all: string;
+      };
+    };
+  };
+}
+
+export interface ReportListItem {
+  report_id: number;
+  test_id: number;
+  child_id: number;
+  child_name: string;
+  birth_year: number;
+  age: number;
+  gender: "male" | "female";
+  test_date: string;
+  test_date_label: string;
+  test_order: number;
+  test_order_label: string;
+  test_status: string;
+  pdi_status: string;
+  summary_text: string;
+  main_emotion: string;
+  result_image_path: string;
+  analysis_mode: "with_pdi" | "without_pdi";
+  pdi_used: boolean;
+  confidence_level: string;
+  created_at: string;
+  updated_at: string;
 }

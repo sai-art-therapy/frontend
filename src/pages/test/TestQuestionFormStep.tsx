@@ -77,7 +77,11 @@ const TestQuestionFormStep = () => {
             });
 
             navigate("/test-result", {
-              state: { testId, childId, childName },
+              state: {
+                testId: Number(testId),
+                childId,
+                childName,
+              },
             });
           } else {
             try {
@@ -114,7 +118,7 @@ const TestQuestionFormStep = () => {
       tId: Number(testId),
       body: {
         question_id: currentQuestion.question.question_id,
-        answer_text: "",
+        answer_text: null as any,
         skip: true,
       },
     });

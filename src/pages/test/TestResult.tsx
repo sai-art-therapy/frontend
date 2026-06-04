@@ -1,8 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // 1. useRef 추가
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 import { useAppQuery } from "../../hooks/apiHooks";
-import { getReportDetail } from "../../apis/test/test";
+import {
+  getReportDetail,
+  getReports,
+  generateReport,
+} from "../../apis/test/test";
+import type { ReportListItem } from "../../types/test.type";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
@@ -18,37 +23,92 @@ const TestResult = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<"집" | "사람" | "나무">("집");
 
-  const reportId = location.state?.reportId;
+  const { reportId: stateReportId, testId } = location.state ?? {};
+
+  const [resolvedReportId, setResolvedReportId] = useState<number | undefined>(
+    stateReportId ? Number(stateReportId) : undefined,
+  );
+  const [isTimedOut, setIsTimedOut] = useState(false);
+
+  const hasRequestedReport = useRef(false);
+
+  useEffect(() => {
+    if (testId && !resolvedReportId && !hasRequestedReport.current) {
+      hasRequestedReport.current = true;
+
+      generateReport(Number(testId))
+        .then(() => console.log("🚀 [성공] 백엔드에 AI 리포트 생성 요청 완료!"))
+        .catch((err) => console.error("❌ [실패] 리포트 생성 요청 에러:", err));
+    }
+  }, [testId, resolvedReportId]);
+
+  const needsPolling = !resolvedReportId && !!testId && !isTimedOut;
+
+  const { data: reportsList } = useAppQuery<ReportListItem[]>(
+    ["reports-polling", testId],
+    getReports,
+    {
+      enabled: needsPolling,
+      staleTime: 0,
+      refetchInterval: needsPolling ? 2000 : false,
+    },
+  );
+
+  useEffect(() => {
+    if (!resolvedReportId && Array.isArray(reportsList)) {
+      const targetTestId = Number(testId);
+
+      console.log("=== [폴링 디버깅] ===");
+      console.log("찾고 있는 현재 Test ID:", targetTestId);
+      console.log("백엔드 리포트 목록 데이터:", reportsList);
+
+      const match = reportsList.find((r) => Number(r.test_id) === targetTestId);
+
+      if (match?.report_id) {
+        console.log(
+          "🎉 일치하는 리포트를 찾았습니다! Report ID:",
+          match.report_id,
+        );
+        setResolvedReportId(match.report_id);
+      } else {
+        console.log(
+          "⏳ 아직 목록에 현재 Test ID와 매칭되는 리포트가 없습니다. 계속 대기 중...",
+        );
+      }
+    }
+  }, [reportsList, resolvedReportId, testId]);
+
+  useEffect(() => {
+    if (!resolvedReportId && !!testId) {
+      const timer = setTimeout(() => {
+        console.error("❌ 90초 대기 시간 초과: AI 리포트 생성 타임아웃");
+        setIsTimedOut(true);
+      }, 90000); // 90000ms = 90초
+      return () => clearTimeout(timer);
+    }
+  }, [resolvedReportId, testId]);
 
   const {
     data: reportData,
-    isLoading,
+    isLoading: isDetailLoading,
     isError,
     error,
   } = useAppQuery(
-    ["reportDetail", reportId],
+    ["reportDetail", resolvedReportId],
     async () => {
-      if (!reportId) throw new Error("리포트 ID를 찾을 수 없습니다.");
-      return getReportDetail(Number(reportId));
+      if (!resolvedReportId) throw new Error("리포트 ID를 찾을 수 없습니다.");
+      return getReportDetail(resolvedReportId);
     },
     {
-      enabled: !!reportId,
+      enabled: !!resolvedReportId,
     },
   );
 
   useEffect(() => {
     if (isError && error) {
       console.error("리포트 상세 로드 에러:", error);
-      alert("리포트 데이터를 정상적으로 가져오지 못했습니다.");
     }
   }, [isError, error]);
-
-  useEffect(() => {
-    if (reportData) {
-      console.log("=== 백엔드에서 실제로 넘어온 리포트 데이터 ===");
-      console.log(JSON.stringify(reportData, null, 2));
-    }
-  }, [reportData]);
 
   const getTabKey = (
     tab: "집" | "사람" | "나무",
@@ -58,7 +118,43 @@ const TestResult = () => {
     return "tree";
   };
 
-  if (isLoading) {
+  if (needsPolling) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-white font-sans text-grey-600">
+        <div className="flex flex-col items-center gap-4 px-[24px] text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-main-500 border-t-transparent" />
+          <p className="text-subheadline font-medium whitespace-pre-line">
+            {
+              "AI가 심리 분석 리포트를 생성하고 있습니다.\n잠시만 기다려주세요...\n(최대 1~2분이 소요될 수 있습니다)"
+            }
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!resolvedReportId) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-white font-sans">
+        <div className="flex flex-col items-center gap-4 px-[24px] text-center">
+          <p className="text-[17px] font-semibold text-grey-900">
+            리포트 정보를 불러올 수 없습니다.
+          </p>
+          <p className="text-[13px] text-grey-400">
+            검사 결과가 아직 준비 중이거나 데이터를 찾을 수 없습니다.
+          </p>
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-4 rounded-[8px] bg-main-500 px-[20px] py-[10px] text-[14px] font-semibold text-white"
+          >
+            뒤로가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isDetailLoading) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-white font-sans text-grey-600">
         <div className="flex flex-col items-center gap-4">
@@ -70,6 +166,8 @@ const TestResult = () => {
       </div>
     );
   }
+
+  const reportAny = reportData as any;
 
   const childName = reportData?.child?.name || "아이";
   const age = reportData?.child?.age ? `만 ${reportData.child.age}세` : "";
@@ -93,17 +191,22 @@ const TestResult = () => {
   const activeTabContent = reportData?.tabs?.[currentKey];
 
   const serverBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
   const fallbackImageUrl = "https://placehold.co/370x200?text=No+Image";
 
   const rawImgPath =
-    reportData?.test_result_images?.[currentKey] ||
+    reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey] ||
+    reportData?.images?.result_image_path ||
     reportData?.test?.result_image_path;
 
   const imageUrl =
     serverBaseUrl && rawImgPath
       ? `${serverBaseUrl}/${rawImgPath}`
       : fallbackImageUrl;
+
+  const recommendations =
+    reportData?.recommendations && reportData.recommendations.length > 0
+      ? reportData.recommendations
+      : reportAny?.raw_report?.report_json?.recommendations || [];
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-white font-sans pb-[40px]">
@@ -175,7 +278,7 @@ const TestResult = () => {
             alt="알림"
             className="h-[24px] w-[24px] shrink-0"
           />
-          <p className="text-[15px] font-normal leading-[20px] tracking-[-0.24px] text-grey-900 whitespace-pre-wrap">
+          <p className="whitespace-pre-wrap text-[15px] font-normal leading-[20px] tracking-[-0.24px] text-grey-900">
             {summaryText}
           </p>
         </div>
@@ -199,8 +302,8 @@ const TestResult = () => {
           ))}
         </div>
 
-        {/* 그림 업로드 및 바운딩박스 결과 노출 영역 */}
-        <div className="relative mt-[8px] flex h-[200px] w-full items-center overflow-hidden rounded-[12px] bg-grey-200 justify-center">
+        {/* 그림 이미지 영역 (YOLO 결과 이미지 - 바운딩박스 포함) */}
+        <div className="relative mt-[8px] flex h-[200px] w-full items-center justify-center overflow-hidden rounded-[12px] bg-grey-200">
           <img
             src={imageUrl}
             alt={`${activeTab} 분석 AI 이미지`}
@@ -209,14 +312,6 @@ const TestResult = () => {
               (e.target as HTMLImageElement).src = fallbackImageUrl;
             }}
           />
-
-          <div className="absolute left-[8%] top-[25%] h-[104px] w-[120px] rounded-[8px] border border-error-500 bg-error-500/10 pointer-events-none">
-            <div className="absolute -top-[28px] left-[0px] flex items-center justify-center gap-[10px] rounded-[4px] bg-error-500 px-[6px] py-[4px]">
-              <span className="text-[12px] font-semibold leading-[16px] text-white">
-                {activeTab}
-              </span>
-            </div>
-          </div>
         </div>
 
         {/* 분석 소견 카드 */}
@@ -249,24 +344,49 @@ const TestResult = () => {
             </div>
           </div>
 
-          <p className="mt-[8px] text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-black whitespace-pre-wrap">
-            {activeTabContent?.interpretation ||
-              "그림 해석 정보를 연동 중입니다."}
+          <p className="mt-[8px] whitespace-pre-wrap text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-black">
+            {activeTabContent?.interpretation || "해석 정보가 없습니다."}
           </p>
 
-          {/* 태그 리스트 영역 동적 매핑 */}
-          <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
-            {activeTabContent?.tags?.map((tag, idx) => (
-              <div
-                key={`tag-${idx}`}
-                className="flex items-center justify-center rounded-[4px] border border-sub-200 bg-sub-100 px-[6px] py-[4px]"
-              >
-                <span className="text-[12px] font-semibold leading-[16px] text-sub-500">
-                  {tag}
-                </span>
+          {/* 태그 리스트 */}
+          {activeTabContent?.tags && activeTabContent.tags.length > 0 && (
+            <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
+              {activeTabContent.tags.map((tag, idx) => (
+                <div
+                  key={`tag-${idx}`}
+                  className="flex items-center justify-center rounded-[4px] border border-sub-200 bg-sub-100 px-[6px] py-[4px]"
+                >
+                  <span className="text-[12px] font-semibold leading-[16px] text-sub-500">
+                    {tag}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 관찰 내용 */}
+          {activeTabContent?.observations &&
+            activeTabContent.observations.length > 0 && (
+              <div className="mt-[8px] flex flex-col gap-[4px]">
+                {activeTabContent.observations.map((obs, idx) => (
+                  <p
+                    key={`obs-${idx}`}
+                    className="text-[12px] font-normal leading-[16px] text-grey-600"
+                  >
+                    • {obs}
+                  </p>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+
+          {/* 긍정 노트 */}
+          {activeTabContent?.positive_note && (
+            <div className="mt-[8px] rounded-[8px] bg-main-50 px-[10px] py-[8px]">
+              <p className="text-[12px] font-normal leading-[16px] text-main-600">
+                💡 {activeTabContent.positive_note}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 추천 가이드 솔루션 활동 */}
@@ -274,29 +394,30 @@ const TestResult = () => {
           이런 활동을 해보세요
         </h3>
 
-        <div className="mt-[16px] flex flex-col gap-[8px] w-full">
-          {reportData?.recommendations &&
-          reportData.recommendations.length > 0 ? (
-            reportData.recommendations.map((item, idx) => (
-              <div
-                key={`recom-${idx}`}
-                className="flex w-full items-start gap-[12px] rounded-[12px] bg-grey-50 p-[12px]"
-              >
-                <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-sub-100">
-                  <span className="text-center font-[SF_Pro] text-[14px] font-semibold text-sub-500">
-                    {idx + 1}
-                  </span>
+        <div className="mt-[16px] flex w-full flex-col gap-[8px]">
+          {recommendations.length > 0 ? (
+            recommendations.map(
+              (item: { title: string; description: string }, idx: number) => (
+                <div
+                  key={`recom-${idx}`}
+                  className="flex w-full items-start gap-[12px] rounded-[12px] bg-grey-50 p-[12px]"
+                >
+                  <div className="flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-full bg-sub-100">
+                    <span className="text-center text-[14px] font-semibold text-sub-500">
+                      {idx + 1}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-[4px]">
+                    <h4 className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-grey-900">
+                      {item.title}
+                    </h4>
+                    <p className="whitespace-pre-wrap text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-grey-600">
+                      {item.description}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-[4px]">
-                  <h4 className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-grey-900">
-                    {item.title}
-                  </h4>
-                  <p className="text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-grey-600 whitespace-pre-wrap">
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-            ))
+              ),
+            )
           ) : (
             <p className="text-[13px] text-grey-400">
               추천 가이드 활동이 아직 수립되지 않았습니다.
@@ -336,21 +457,23 @@ const TestResult = () => {
             size="md"
             className="w-full"
             showIcon={false}
-            onClick={() => navigate("/ai-chat", { state: { reportId } })}
+            onClick={() =>
+              navigate("/ai-chat", { state: { reportId: resolvedReportId } })
+            }
           >
             AI 상담사와 대화하기
           </ActionButton>
         </div>
 
-        <div className="mt-[16px] mb-[40px] flex w-full items-center gap-[14px]">
-          <button className="flex cursor-pointer h-[42px] flex-1 items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200">
+        <div className="mb-[40px] mt-[16px] flex w-full items-center gap-[14px]">
+          <button className="flex h-[42px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200">
             <img src={shareIcon} alt="공유" className="h-[24px] w-[24px]" />
             <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-sub-500">
               공유하기
             </span>
           </button>
 
-          <button className="flex cursor-pointer h-[42px] flex-1 items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200">
+          <button className="flex h-[42px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200">
             <img src={saveIcon} alt="PDF 저장" className="h-[24px] w-[24px]" />
             <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-sub-500">
               PDF 저장하기
