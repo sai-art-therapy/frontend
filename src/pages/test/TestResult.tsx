@@ -161,6 +161,21 @@ const TestResult = () => {
     return "tree";
   };
 
+  const handleGoToChat = () => {
+    if (!resolvedReportId) {
+      alert("리포트 정보가 존재하지 않아 채팅방을 이동할 수 없습니다.");
+      return;
+    }
+
+    navigate(`/chat/report/${resolvedReportId}`, {
+      state: {
+        reportId: resolvedReportId,
+        testId: testId,
+        childName: reportData?.child?.name || "아이",
+      },
+    });
+  };
+
   if (needsPolling) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-white font-sans text-grey-600">
@@ -584,9 +599,7 @@ const TestResult = () => {
             size="md"
             className="w-full"
             showIcon={false}
-            onClick={() =>
-              navigate("/ai-chat", { state: { reportId: resolvedReportId } })
-            }
+            onClick={handleGoToChat}
           >
             AI 상담사와 대화하기
           </ActionButton>
