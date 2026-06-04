@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
@@ -29,6 +29,28 @@ const TestThirdStep = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const albumInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        console.log("📹 컴포넌트 언마운트로 인한 카메라 스트림 해제 완료");
+      }
+    };
+  }, []);
+
+  const saveImageToSessionAsBase64 = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        sessionStorage.setItem("user_uploaded_image", reader.result);
+        console.log(
+          "💾 새로고침에도 대응 가능한 Base64 이미지가 세션에 백업되었습니다.",
+        );
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const { mutate: uploadImage, isPending } = useAppMutation<string, any>(
     ({ testId, file }: { testId: number; file: File }) =>
       uploadTestImage(testId, file),
@@ -36,6 +58,10 @@ const TestThirdStep = () => {
       onSuccess: (data) => {
         console.log("그림 이미지 업로드 성공:", data);
         const uploadedImageUrl = typeof data === "string" ? data : previewUrl;
+
+        if (selectedFile) {
+          saveImageToSessionAsBase64(selectedFile);
+        }
 
         navigate("/test-loading-step", {
           state: {
@@ -107,6 +133,9 @@ const TestThirdStep = () => {
                   type: "image/jpeg",
                 },
               );
+
+              if (previewUrl) URL.revokeObjectURL(previewUrl);
+
               setSelectedFile(file);
               setPreviewUrl(URL.createObjectURL(file));
               stopCamera();
@@ -140,6 +169,9 @@ const TestThirdStep = () => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
+
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
     } else {
@@ -358,15 +390,17 @@ const TestThirdStep = () => {
       </main>
 
       <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-side pb-[32px] pt-[16px]">
-        <ActionButton
-          variant="darkGrey"
-          disabled={!selectedFile || isPending}
-          className="w-full"
-          showIcon={false}
-          onClick={handleUploadSubmit}
-        >
-          {isPending ? "이미지 분석 요청 중..." : "분석 시작하기"}
-        </ActionButton>
+        <div className="flex w-full items-center gap-[16px]">
+          <ActionButton
+            variant="darkGrey"
+            disabled={!selectedFile || isPending}
+            className="w-full"
+            showIcon={false}
+            onClick={handleUploadSubmit}
+          >
+            {isPending ? "이미지 분석 요청 중..." : "분석 시작하기"}
+          </ActionButton>
+        </div>
       </div>
     </div>
   );

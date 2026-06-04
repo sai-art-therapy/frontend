@@ -1,5 +1,10 @@
 import axiosInstance from "../axiosInstance";
-import type { PostTestRequest, PostTestResponse } from "../../types/test.type";
+import type {
+  PostTestRequest,
+  PostTestResponse,
+  ReportDetailResponse,
+  ReportListItem,
+} from "../../types/test.type";
 
 export const postTest = async (data: PostTestRequest) => {
   const response = await axiosInstance.post<PostTestResponse>("/tests", data);
@@ -106,6 +111,26 @@ export const submitPdiAnswer = async (
 export const skipAllPdiQuestions = async (testId: number) => {
   const response = await axiosInstance.post<string>(
     `/tests/${testId}/pdi/skip`,
+    {},
+  );
+  return response.data;
+};
+
+export const getReports = async () => {
+  const response = await axiosInstance.get<ReportListItem[]>("/reports");
+  return response.data;
+};
+
+export const getReportDetail = async (reportId: number) => {
+  const response = await axiosInstance.get<ReportDetailResponse>(
+    `/reports/${reportId}`,
+  );
+  return response.data;
+};
+
+export const generateReport = async (testId: number) => {
+  const response = await axiosInstance.post<string>(
+    `/tests/${testId}/generate-report`,
     {},
   );
   return response.data;
