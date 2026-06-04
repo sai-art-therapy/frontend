@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
@@ -29,6 +29,28 @@ const TestThirdStep = () => {
   const streamRef = useRef<MediaStream | null>(null);
   const albumInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        console.log("📹 컴포넌트 언마운트로 인한 카메라 스트림 해제 완료");
+      }
+    };
+  }, []);
+
+  const saveImageToSessionAsBase64 = (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        sessionStorage.setItem("user_uploaded_image", reader.result);
+        console.log(
+          "💾 새로고침에도 대응 가능한 Base64 이미지가 세션에 백업되었습니다.",
+        );
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const { mutate: uploadImage, isPending } = useAppMutation<string, any>(
     ({ testId, file }: { testId: number; file: File }) =>
       uploadTestImage(testId, file),
@@ -38,9 +60,7 @@ const TestThirdStep = () => {
         const uploadedImageUrl = typeof data === "string" ? data : previewUrl;
 
         if (selectedFile) {
-          const blobUrl = URL.createObjectURL(selectedFile);
-          sessionStorage.setItem("user_uploaded_image", blobUrl);
-          console.log("임시 로컬 이미지 세션 저장 완료:", blobUrl);
+          saveImageToSessionAsBase64(selectedFile);
         }
 
         navigate("/test-loading-step", {
@@ -113,6 +133,9 @@ const TestThirdStep = () => {
                   type: "image/jpeg",
                 },
               );
+
+              if (previewUrl) URL.revokeObjectURL(previewUrl);
+
               setSelectedFile(file);
               setPreviewUrl(URL.createObjectURL(file));
               stopCamera();
@@ -146,6 +169,9 @@ const TestThirdStep = () => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
+
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
     } else {

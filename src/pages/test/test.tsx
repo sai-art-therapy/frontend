@@ -4,14 +4,21 @@ import { FloatingButton } from "../../components/common/FloatingButton";
 
 import lovelyIcon from "../../assets/icons/test/lovely.svg";
 import clipboardCloseIcon from "../../assets/icons/test/clipboard-close.svg";
+import calendarIcon from "../../assets/icons/home/calendar.svg";
 
 import { useAppQuery } from "../../hooks/apiHooks";
 import { getChildren } from "../../api/mypage";
+import { getReports } from "../../apis/test/test";
+import type { ReportListItem } from "../../types/test.type";
 
 const Test = () => {
   const navigate = useNavigate();
 
   const { data: children } = useAppQuery(["children"], getChildren);
+  const { data: reports } = useAppQuery<ReportListItem[]>(
+    ["reports"],
+    getReports,
+  );
 
   const handleStartClick = () => {
     if (!children || children.length === 0) {
@@ -22,6 +29,10 @@ const Test = () => {
     navigate("/test-start", {
       state: { childId: children[0].child_id },
     });
+  };
+
+  const handleReportClick = (reportId: number) => {
+    navigate(`/test-result?reportId=${reportId}`);
   };
 
   return (
@@ -75,18 +86,80 @@ const Test = () => {
 
       <section className="flex flex-col bg-white pb-safe-bottom pt-[24px]">
         <h3 className="ml-side text-e-body-1 text-black">최근 검사 결과</h3>
-        <div className="mx-side mt-side flex h-[254px] flex-col items-center justify-center gap-[10px] rounded-md bg-grey-50 px-side py-[24px]">
-          <img
-            src={clipboardCloseIcon}
-            alt="진행한 검사 없음"
-            className="h-icon-lg w-icon-lg"
-          />
-          <p className="text-center text-footnote text-grey-600">
-            아직 진행한 검사가 없어요.
-            <br />
-            검사를 진행하고 리포트를 받아보세요!
-          </p>
-        </div>
+
+        {reports && reports.length > 0 ? (
+          <div className="mx-side mt-[16px] flex flex-col items-start justify-center rounded-md border border-grey-200 bg-white p-[16px_16px_8px_16px]">
+            <div className="mb-[4px] flex items-center">
+              <img
+                src={calendarIcon}
+                alt="달력"
+                className="h-icon-sm w-icon-sm"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+              <h3 className="ml-[8px] text-e-body-1 text-black">
+                최근 검사 리포트를 확인해보세요
+              </h3>
+            </div>
+
+            <div className="mt-[4px] flex w-full flex-col">
+              {reports.map((report, idx) => (
+                <div key={report.report_id}>
+                  <div
+                    className="flex w-full cursor-pointer items-center justify-between py-[12px]"
+                    onClick={() => handleReportClick(report.report_id)}
+                  >
+                    <div className="flex items-center gap-[12px]">
+                      <div className="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-grey-50 text-[24px]">
+                        {report.gender === "female" ? "👧🏻" : "👦🏻"}
+                      </div>
+                      <div className="flex flex-col gap-[2px]">
+                        <span className="text-[16px] font-semibold text-black">
+                          {report.child_name}
+                        </span>
+                        <span className="text-[13px] text-grey-600">
+                          {report.test_date_label} · {report.test_order_label}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-grey-400">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M9 18L15 12L9 6"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </div>
+                  {idx < reports.length - 1 && (
+                    <div className="h-[1px] w-full bg-grey-200" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mx-side mt-side flex h-[254px] flex-col items-center justify-center gap-[10px] rounded-md bg-grey-50 px-side py-[24px]">
+            <img
+              src={clipboardCloseIcon}
+              alt="진행한 검사 없음"
+              className="h-icon-lg w-icon-lg"
+            />
+            <p className="text-center text-footnote text-grey-600">
+              아직 진행한 검사가 없어요.
+              <br />
+              검사를 진행하고 리포트를 받아보세요!
+            </p>
+          </div>
+        )}
       </section>
 
       <FloatingButton onClick={() => console.log("플로팅 버튼 클릭")} />

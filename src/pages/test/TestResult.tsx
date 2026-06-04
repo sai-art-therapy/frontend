@@ -439,6 +439,8 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     : reportData?.images?.original_image_path ||
       reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey] ||
       reportData?.images?.result_image_path ||
+      reportAny?.result_image_path ||
+      reportAny?.image_path ||
       reportAny?.test?.result_image_path ||
       reportAny?.test?.image_path ||
       reportAny?.test?.result_image_url ||
