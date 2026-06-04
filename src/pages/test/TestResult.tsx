@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type SyntheticEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 import { useAppQuery } from "../../hooks/apiHooks";
@@ -29,6 +29,15 @@ const TestResult = () => {
     stateReportId ? Number(stateReportId) : undefined,
   );
   const [isTimedOut, setIsTimedOut] = useState(false);
+
+  const [imageRect, setImageRect] = useState({
+    natW: 1,
+    natH: 1,
+    renderW: 1,
+    renderH: 1,
+    offsetX: 0,
+    offsetY: 0,
+  });
 
   const hasRequestedReport = useRef(false);
 
@@ -109,6 +118,40 @@ const TestResult = () => {
       console.error("리포트 상세 로드 에러:", error);
     }
   }, [isError, error]);
+
+  const handleImageLoad = (e: SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const { naturalWidth, naturalHeight, width, height } = img;
+
+    if (!naturalWidth || !naturalHeight) return;
+
+    const imgRatio = naturalWidth / naturalHeight;
+    const containerRatio = width / height;
+
+    let renderW,
+      renderH,
+      offsetX = 0,
+      offsetY = 0;
+
+    if (imgRatio > containerRatio) {
+      renderW = width;
+      renderH = width / imgRatio;
+      offsetY = (height - renderH) / 2;
+    } else {
+      renderH = height;
+      renderW = height * imgRatio;
+      offsetX = (width - renderW) / 2;
+    }
+
+    setImageRect({
+      natW: naturalWidth,
+      natH: naturalHeight,
+      renderW,
+      renderH,
+      offsetX,
+      offsetY,
+    });
+  };
 
   const getTabKey = (
     tab: "집" | "사람" | "나무",
@@ -193,9 +236,9 @@ const TestResult = () => {
   const fallbackImageUrl = "https://placehold.co/370x200?text=No+Image";
 
   const rawImgPath =
+    reportData?.images?.original_image_path ||
     reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey] ||
     reportData?.images?.result_image_path ||
-    reportData?.images?.original_image_path ||
     reportAny?.test?.result_image_path ||
     reportAny?.test?.image_path ||
     reportAny?.test?.result_image_url ||
@@ -225,6 +268,10 @@ const TestResult = () => {
 
     return parsedUrl;
   })();
+
+  const detections =
+    reportAny?.analysis?.yolo_result_json?.display_detections || [];
+  const currentDetection = detections.find((d: any) => d.type === currentKey);
 
   const recommendations =
     reportData?.recommendations && reportData.recommendations.length > 0
@@ -329,8 +376,9 @@ const TestResult = () => {
         <div className="relative mt-[8px] flex h-[200px] w-full items-center justify-center overflow-hidden rounded-[12px] bg-grey-200">
           <img
             src={imageUrl}
-            alt={`${activeTab} 분석 AI 이미지`}
+            alt={`${activeTab} 분석 원본 이미지`}
             className="h-full w-full object-contain"
+            onLoad={handleImageLoad}
             onError={(e) => {
               console.warn(
                 "⚠️ 이미지 로드 실패, 보관된 로컬 이미지 혹은 No Image로 대체됩니다. 시도된 URL:",
@@ -343,6 +391,54 @@ const TestResult = () => {
                 userLocalImage || fallbackImageUrl;
             }}
           />
+
+          {currentDetection && imageRect && (
+            <div
+              style={{
+                position: "absolute",
+                left: `${imageRect.offsetX + currentDetection.bbox.x1 * (imageRect.renderW / imageRect.natW)}px`,
+                top: `${imageRect.offsetY + currentDetection.bbox.y1 * (imageRect.renderH / imageRect.natH)}px`,
+                width: `${(currentDetection.bbox.x2 - currentDetection.bbox.x1) * (imageRect.renderW / imageRect.natW)}px`,
+                height: `${(currentDetection.bbox.y2 - currentDetection.bbox.y1) * (imageRect.renderH / imageRect.natH)}px`,
+                pointerEvents: "none",
+              }}
+            >
+              {/* 라벨 */}
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 4px)",
+                  left: 0,
+                  display: "flex",
+                  padding: "4px 6px",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "10px",
+                  borderRadius: "4px",
+                  background: "#F04438",
+                  color: "#FFF",
+                  fontFamily: "Pretendard",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  lineHeight: "16px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {currentDetection.label}
+              </div>
+
+              {/* 반투명 빨간색 바운딩 박스 */}
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "8px",
+                  border: "1px solid #F04438",
+                  background: "rgba(240, 68, 56, 0.10)",
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* 분석 소견 카드 */}
