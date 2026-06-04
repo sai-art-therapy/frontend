@@ -7,7 +7,7 @@ import returnIcon from "../../assets/icons/common/return.svg";
 import timeIcon from "../../assets/icons/test/time.svg";
 
 import { useAppMutation } from "../../hooks/apiHooks";
-import { saveDrawingTime, skipAllPdiQuestions } from "../../apis/test/test";
+import { saveDrawingTime } from "../../apis/test/test";
 
 const TestTimeInputStep = () => {
   const navigate = useNavigate();
@@ -23,10 +23,7 @@ const TestTimeInputStep = () => {
 
   const isNextEnabled = minutes.trim().length > 0 || seconds.trim().length > 0;
 
-  const { mutate: saveTime, isPending: isSavingTime } = useAppMutation<
-    string,
-    any
-  >(
+  const { mutate: saveTime, isPending } = useAppMutation<string, any>(
     ({ tId, totalMinutes }: { tId: number; totalMinutes: number }) =>
       saveDrawingTime(tId, totalMinutes),
     {
@@ -48,25 +45,6 @@ const TestTimeInputStep = () => {
     },
   );
 
-  const { mutate: handleSkipPdi, isPending: isSkippingPdi } = useAppMutation<
-    any,
-    any
-  >((tId: number) => skipAllPdiQuestions(tId), {
-    onSuccess: () => {
-      navigate("/test-loading-step", {
-        state: {
-          testId,
-          childId,
-          childName,
-        },
-      });
-    },
-    onError: (error) => {
-      console.error("PDI 건너뛰기 요청 실패:", error);
-      alert("처리에 실패했습니다. 다시 시도해 주세요.");
-    },
-  });
-
   const handleNext = () => {
     if (!testId) {
       alert("검사 정보가 존재하지 않습니다.");
@@ -86,10 +64,8 @@ const TestTimeInputStep = () => {
       return;
     }
 
-    handleSkipPdi(Number(testId));
+    saveTime({ tId: Number(testId), totalMinutes: 0 });
   };
-
-  const isPending = isSavingTime || isSkippingPdi;
 
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">
