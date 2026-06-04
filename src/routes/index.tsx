@@ -39,6 +39,11 @@ const RootIndex = () => {
 
 export const router = createBrowserRouter([
   {
+    path: "/share/result",
+    element: <TestResult isSharedView={true} />,
+  },
+
+  {
     path: "/",
     element: <RootLayout />,
     children: [

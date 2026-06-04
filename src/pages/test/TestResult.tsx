@@ -18,12 +18,45 @@ import questionmarkBalloonIcon from "../../assets/icons/test/questionmarkballoon
 import shareIcon from "../../assets/icons/test/share.svg";
 import saveIcon from "../../assets/icons/test/save.svg";
 
-const TestResult = () => {
+interface TestResultProps {
+  isSharedView?: boolean;
+}
+
+const TestResult = ({ isSharedView = false }: TestResultProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<"집" | "사람" | "나무">("집");
 
-  const { reportId: stateReportId, testId } = location.state ?? {};
+  const searchParams = new URLSearchParams(location.search);
+  const queryReportId = searchParams.get("reportId");
+  const queryTestId = searchParams.get("testId");
+
+  const queryChildName = searchParams.get("childName") || "아이";
+  const queryAge = searchParams.get("age") || "";
+  const queryGender = searchParams.get("gender") || "";
+  const queryTestDate = searchParams.get("testDate") || "";
+  const querySummary =
+    searchParams.get("summary") ||
+    "그림 전반에 안정감과 현실 접촉이 잘 표현되었습니다.";
+  const queryImg = searchParams.get("img") || "";
+  const queryHouseInterp =
+    searchParams.get("houseInterp") || "해석 정보가 없습니다.";
+  const queryPersonInterp =
+    searchParams.get("personInterp") || "해석 정보가 없습니다.";
+  const queryTreeInterp =
+    searchParams.get("treeInterp") || "해석 정보가 없습니다.";
+  const queryHouseStatus = searchParams.get("houseStatus") || "보통";
+  const queryPersonStatus = searchParams.get("personStatus") || "보통";
+  const queryTreeStatus = searchParams.get("treeStatus") || "보통";
+  const queryRecoms = searchParams.get("recoms")
+    ? JSON.parse(decodeURIComponent(searchParams.get("recoms")!))
+    : [];
+
+  const stateReportId =
+    location.state?.reportId ??
+    (queryReportId ? Number(queryReportId) : undefined);
+  const testId =
+    location.state?.testId ?? (queryTestId ? Number(queryTestId) : undefined);
 
   const [resolvedReportId, setResolvedReportId] = useState<number | undefined>(
     stateReportId ? Number(stateReportId) : undefined,
@@ -42,6 +75,13 @@ const TestResult = () => {
   const hasRequestedReport = useRef(false);
 
   useEffect(() => {
+    if (stateReportId && stateReportId !== resolvedReportId) {
+      setResolvedReportId(Number(stateReportId));
+    }
+  }, [stateReportId]);
+
+  useEffect(() => {
+    if (isSharedView) return;
     if (testId && !resolvedReportId && !hasRequestedReport.current) {
       hasRequestedReport.current = true;
 
@@ -49,9 +89,10 @@ const TestResult = () => {
         .then(() => console.log("🚀 [성공] 백엔드에 AI 리포트 생성 요청 완료!"))
         .catch((err) => console.error("❌ [실패] 리포트 생성 요청 에러:", err));
     }
-  }, [testId, resolvedReportId]);
+  }, [testId, resolvedReportId, isSharedView]);
 
-  const needsPolling = !resolvedReportId && !!testId && !isTimedOut;
+  const needsPolling =
+    !isSharedView && !resolvedReportId && !!testId && !isTimedOut;
 
   const { data: reportsList } = useAppQuery<ReportListItem[]>(
     ["reports-polling", testId],
@@ -88,14 +129,14 @@ const TestResult = () => {
   }, [reportsList, resolvedReportId, testId]);
 
   useEffect(() => {
-    if (!resolvedReportId && !!testId) {
+    if (!isSharedView && !resolvedReportId && !!testId) {
       const timer = setTimeout(() => {
         console.error("❌ 90초 대기 시간 초과: AI 리포트 생성 타임아웃");
         setIsTimedOut(true);
       }, 90000);
       return () => clearTimeout(timer);
     }
-  }, [resolvedReportId, testId]);
+  }, [resolvedReportId, testId, isSharedView]);
 
   const {
     data: reportData,
@@ -109,7 +150,7 @@ const TestResult = () => {
       return getReportDetail(resolvedReportId);
     },
     {
-      enabled: !!resolvedReportId,
+      enabled: !!resolvedReportId && !isSharedView,
     },
   );
 
@@ -171,9 +212,68 @@ const TestResult = () => {
       state: {
         reportId: resolvedReportId,
         testId: testId,
-        childName: reportData?.child?.name || "아이",
+        childName: childName,
       },
     });
+  };
+
+  const handleShare = async () => {
+    if (!isSharedView && !resolvedReportId) {
+      alert("리포트 생성 완료 후 공유가 가능합니다.");
+      return;
+    }
+
+    const currentReportId = isSharedView ? queryReportId : resolvedReportId;
+    const currentTestId = isSharedView ? queryTestId : testId;
+
+    const baseShareUrl = `${window.location.origin}/share/result`;
+    const params = new URLSearchParams({
+      reportId: String(currentReportId),
+      testId: currentTestId ? String(currentTestId) : "",
+      childName: childName,
+      age: age,
+      gender: reportData?.child?.gender || searchParams.get("gender") || "",
+      testDate: testDate,
+      summary: summaryText,
+      img: imageUrl,
+      houseInterp: reportData?.tabs?.house?.interpretation || queryHouseInterp,
+      personInterp:
+        reportData?.tabs?.person?.interpretation || queryPersonInterp,
+      treeInterp: reportData?.tabs?.tree?.interpretation || queryTreeInterp,
+      houseStatus: reportData?.tabs?.house?.status || queryHouseStatus,
+      personStatus: reportData?.tabs?.person?.status || queryPersonStatus,
+      treeStatus: reportData?.tabs?.tree?.status || queryTreeStatus,
+      recoms: encodeURIComponent(JSON.stringify(recommendations)),
+    });
+
+    const fullShareUrl = `${baseShareUrl}?${params.toString()}`;
+
+    const shareData = {
+      title: `${childName}의 마음 이야기 리포트`,
+      text: "우리 아이의 심리 분석 결과를 확인해 보세요!",
+      url: fullShareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        console.log("🔗 고유 리포트 링크 공유 성공");
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          console.error("❌ 공유 중 오류가 발생했습니다:", error);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(fullShareUrl);
+        alert(
+          "고유 리포트 링크가 클립보드에 복사되었습니다! 카카오톡 등에 붙여넣기(Ctrl+V) 하세요.",
+        );
+      } catch (err) {
+        console.error("❌ 클립보드 복사 실패:", err);
+        alert("링크 복사에 실패했습니다. 공유용 주소를 직접 복사해 주세요.");
+      }
+    }
   };
 
   if (needsPolling) {
@@ -191,7 +291,7 @@ const TestResult = () => {
     );
   }
 
-  if (!resolvedReportId) {
+  if (!isSharedView && !resolvedReportId) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-white font-sans">
         <div className="flex flex-col items-center gap-4 px-[24px] text-center">
@@ -227,39 +327,82 @@ const TestResult = () => {
 
   const reportAny = reportData as any;
 
-  const childName = reportData?.child?.name || "아이";
-  const age = reportData?.child?.age ? `만 ${reportData.child.age}세` : "";
-  const gender =
-    reportData?.child?.gender === "male"
+  const childName = isSharedView
+    ? queryChildName
+    : reportData?.child?.name || "아이";
+
+  const age = isSharedView
+    ? queryAge
+      ? queryAge.startsWith("만")
+        ? queryAge
+        : `만 ${queryAge}세`
+      : ""
+    : reportData?.child?.age
+      ? `만 ${reportData.child.age}세`
+      : "";
+
+  const gender = isSharedView
+    ? queryGender === "male" || queryGender === "남아"
+      ? "남아"
+      : queryGender === "female" || queryGender === "여아"
+        ? "여아"
+        : ""
+    : reportData?.child?.gender === "male"
       ? "남아"
       : reportData?.child?.gender === "female"
         ? "여아"
         : "";
 
   const rawDate = reportData?.test?.test_date;
-  const testDate = rawDate
-    ? `${rawDate.split("T")[0].replace(/-/g, ".")} 검사`
-    : reportData?.test?.test_date_label || "";
-  const summaryText =
-    reportData?.summary?.one_line_summary ||
-    "그림 전반에 안정감과 현실 접촉이 잘 표현되었습니다.";
+  const testDate = isSharedView
+    ? queryTestDate
+    : rawDate
+      ? `${rawDate.split("T")[0].replace(/-/g, ".")} 검사`
+      : reportData?.test?.test_date_label || "";
+
+  const summaryText = isSharedView
+    ? querySummary
+    : reportData?.summary?.one_line_summary ||
+      "그림 전반에 안정감과 현실 접촉이 잘 표현되었습니다.";
 
   const currentKey = getTabKey(activeTab);
-  const activeTabContent = reportData?.tabs?.[currentKey];
+
+  const activeTabContent = isSharedView
+    ? {
+        interpretation:
+          currentKey === "house"
+            ? queryHouseInterp
+            : currentKey === "person"
+              ? queryPersonInterp
+              : queryTreeInterp,
+        status:
+          currentKey === "house"
+            ? queryHouseStatus
+            : currentKey === "person"
+              ? queryPersonStatus
+              : queryTreeStatus,
+        tags: [],
+        observations: [],
+        positive_note: "",
+      }
+    : reportData?.tabs?.[currentKey];
 
   const serverBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const fallbackImageUrl = "https://placehold.co/370x200?text=No+Image";
 
-  const rawImgPath =
-    reportData?.images?.original_image_path ||
-    reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey] ||
-    reportData?.images?.result_image_path ||
-    reportAny?.test?.result_image_path ||
-    reportAny?.test?.image_path ||
-    reportAny?.test?.result_image_url ||
-    reportAny?.test?.image_url;
+  const rawImgPath = isSharedView
+    ? queryImg
+    : reportData?.images?.original_image_path ||
+      reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey] ||
+      reportData?.images?.result_image_path ||
+      reportAny?.test?.result_image_path ||
+      reportAny?.test?.image_path ||
+      reportAny?.test?.result_image_url ||
+      reportAny?.test?.image_url;
 
   const imageUrl = (() => {
+    if (isSharedView) return rawImgPath || fallbackImageUrl;
+
     const userLocalImage = sessionStorage.getItem("user_uploaded_image");
 
     if (!rawImgPath || rawImgPath.includes("Not Found")) {
@@ -274,7 +417,6 @@ const TestResult = () => {
     const cleanPath = rawImgPath.startsWith("/")
       ? rawImgPath
       : `/${rawImgPath}`;
-
     const parsedUrl = baseUrl ? `${baseUrl}${cleanPath}` : fallbackImageUrl;
 
     if (parsedUrl === fallbackImageUrl && userLocalImage) {
@@ -284,30 +426,32 @@ const TestResult = () => {
     return parsedUrl;
   })();
 
-  const detections =
-    reportAny?.analysis?.yolo_result_json?.display_detections || [];
+  const detections = isSharedView
+    ? []
+    : reportAny?.analysis?.yolo_result_json?.display_detections || [];
   const currentDetection = detections.find((d: any) => d.type === currentKey);
 
-  const recommendations =
-    reportData?.recommendations && reportData.recommendations.length > 0
+  const recommendations = isSharedView
+    ? queryRecoms
+    : reportData?.recommendations && reportData.recommendations.length > 0
       ? reportData.recommendations
       : reportAny?.raw_report?.report_json?.recommendations || [];
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-white font-sans pb-[40px]">
-      {/* 헤더 영역 */}
       <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-[24px] py-[20px]">
-        <img
-          src={returnIcon}
-          alt="뒤로가기"
-          onClick={() => navigate(-1)}
-          className="h-[14px] w-[14px] cursor-pointer"
-        />
+        {!isSharedView && (
+          <img
+            src={returnIcon}
+            alt="뒤로가기"
+            onClick={() => navigate(-1)}
+            className="h-[14px] w-[14px] cursor-pointer"
+          />
+        )}
         <h1 className="text-e-title-3 text-grey-900">검사 결과</h1>
       </div>
 
       <main className="flex flex-col px-[24px]">
-        {/* 경고 박스 */}
         <div className="mt-[4px] flex w-full items-center gap-[10px] rounded-[8px] bg-warning-100 p-[8px]">
           <img src={referIcon} alt="참고" className="h-[24px] w-[24px]" />
           <p className="text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-grey-900">
@@ -316,7 +460,6 @@ const TestResult = () => {
           </p>
         </div>
 
-        {/* 유저 타이틀 및 태그 */}
         <div className="mt-[16px] flex items-start gap-[16px]">
           <img
             src={heartDocumentIcon}
@@ -348,11 +491,9 @@ const TestResult = () => {
         </div>
       </main>
 
-      {/* 회색 구분선 */}
       <div className="mt-[16px] h-[13px] w-full bg-grey-100" />
 
       <main className="flex flex-col px-[24px]">
-        {/* 종합 요약 */}
         <h3 className="mt-[16px] text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-grey-900">
           종합 요약을 해드릴게요
         </h3>
@@ -368,7 +509,6 @@ const TestResult = () => {
           </p>
         </div>
 
-        {/* 상세 분석 탭 영역 */}
         <h3 className="mt-[32px] text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-grey-900">
           그림 속 요소를 하나씩 살펴봤어요
         </h3>
@@ -387,7 +527,6 @@ const TestResult = () => {
           ))}
         </div>
 
-        {/* 그림 이미지 영역 */}
         <div className="relative mt-[8px] flex h-[200px] w-full items-center justify-center overflow-hidden rounded-[12px] bg-grey-200">
           <img
             src={imageUrl}
@@ -407,7 +546,7 @@ const TestResult = () => {
             }}
           />
 
-          {currentDetection && imageRect && (
+          {!isSharedView && currentDetection && imageRect && (
             <div
               style={{
                 position: "absolute",
@@ -418,7 +557,6 @@ const TestResult = () => {
                 pointerEvents: "none",
               }}
             >
-              {/* 라벨 */}
               <div
                 style={{
                   position: "absolute",
@@ -442,7 +580,6 @@ const TestResult = () => {
                 {currentDetection.label}
               </div>
 
-              {/* 반투명 빨간색 바운딩 박스 */}
               <div
                 style={{
                   width: "100%",
@@ -456,7 +593,6 @@ const TestResult = () => {
           )}
         </div>
 
-        {/* 분석 소견 카드 */}
         <div className="mt-[8px] flex w-full flex-col gap-[8px] rounded-[12px] border border-grey-200 bg-white p-[12px]">
           <div className="flex w-full items-start gap-[16px]">
             <div className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[8px] bg-error-100">
@@ -490,39 +626,41 @@ const TestResult = () => {
             {activeTabContent?.interpretation || "해석 정보가 없습니다."}
           </p>
 
-          {/* 태그 리스트 */}
-          {activeTabContent?.tags && activeTabContent.tags.length > 0 && (
-            <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
-              {activeTabContent.tags.map((tag, idx) => (
-                <div
-                  key={`tag-${idx}`}
-                  className="flex items-center justify-center rounded-[4px] border border-sub-200 bg-sub-100 px-[6px] py-[4px]"
-                >
-                  <span className="text-[12px] font-semibold leading-[16px] text-sub-500">
-                    {tag}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* 관찰 내용 */}
-          {activeTabContent?.observations &&
-            activeTabContent.observations.length > 0 && (
-              <div className="mt-[8px] flex flex-col gap-[4px]">
-                {activeTabContent.observations.map((obs, idx) => (
-                  <p
-                    key={`obs-${idx}`}
-                    className="text-[12px] font-normal leading-[16px] text-grey-600"
+          {!isSharedView &&
+            activeTabContent?.tags &&
+            activeTabContent.tags.length > 0 && (
+              <div className="mt-[8px] flex flex-wrap items-center gap-[8px]">
+                {activeTabContent.tags.map((tag: string, idx: number) => (
+                  <div
+                    key={`tag-${idx}`}
+                    className="flex items-center justify-center rounded-[4px] border border-sub-200 bg-sub-100 px-[6px] py-[4px]"
                   >
-                    • {obs}
-                  </p>
+                    <span className="text-[12px] font-semibold leading-[16px] text-sub-500">
+                      {tag}
+                    </span>
+                  </div>
                 ))}
               </div>
             )}
 
-          {/* 긍정 노트 */}
-          {activeTabContent?.positive_note && (
+          {!isSharedView &&
+            activeTabContent?.observations &&
+            activeTabContent.observations.length > 0 && (
+              <div className="mt-[8px] flex flex-col gap-[4px]">
+                {activeTabContent.observations.map(
+                  (obs: string, idx: number) => (
+                    <p
+                      key={`obs-${idx}`}
+                      className="text-[12px] font-normal leading-[16px] text-grey-600"
+                    >
+                      • {obs}
+                    </p>
+                  ),
+                )}
+              </div>
+            )}
+
+          {!isSharedView && activeTabContent?.positive_note && (
             <div className="mt-[8px] rounded-[8px] bg-main-50 px-[10px] py-[8px]">
               <p className="text-[12px] font-normal leading-[16px] text-main-600">
                 💡 {activeTabContent.positive_note}
@@ -531,7 +669,6 @@ const TestResult = () => {
           )}
         </div>
 
-        {/* 추천 가이드 솔루션 활동 */}
         <h3 className="mt-[32px] text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-grey-900">
           이런 활동을 해보세요
         </h3>
@@ -567,7 +704,6 @@ const TestResult = () => {
           )}
         </div>
 
-        {/* 전문 상담 권장 알림 카드 */}
         <div className="mt-[8px] flex w-full flex-col items-start gap-[10px] rounded-[12px] bg-warning-100 p-[12px]">
           <div className="flex items-center gap-[8px]">
             <img src={personIcon} alt="전문가" className="h-[24px] w-[24px]" />
@@ -581,32 +717,36 @@ const TestResult = () => {
           </p>
         </div>
 
-        {/* AI 상담 대화 기능 유도 박스 */}
-        <div className="mt-[32px] flex w-full flex-col items-center justify-center gap-[16px] rounded-[12px] border border-main-200 bg-white p-[16px]">
-          <div className="flex items-center gap-[8px]">
-            <img
-              src={questionmarkBalloonIcon}
-              alt="질문"
-              className="h-[24px] w-[24px]"
-            />
-            <span className="text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-grey-900">
-              아이에 대한 궁금한 점이 있다면
-            </span>
-          </div>
+        {!isSharedView && (
+          <div className="mt-[32px] flex w-full flex-col items-center justify-center gap-[16px] rounded-[12px] border border-main-200 bg-white p-[16px]">
+            <div className="flex items-center gap-[8px]">
+              <img
+                src={questionmarkBalloonIcon}
+                alt="질문"
+                className="h-[24px] w-[24px]"
+              />
+              <span className="text-[17px] font-semibold leading-[22px] tracking-[-0.41px] text-grey-900">
+                아이에 대한 궁금한 점이 있다면
+              </span>
+            </div>
 
-          <ActionButton
-            variant="lightOrange"
-            size="md"
-            className="w-full"
-            showIcon={false}
-            onClick={handleGoToChat}
-          >
-            AI 상담사와 대화하기
-          </ActionButton>
-        </div>
+            <ActionButton
+              variant="lightOrange"
+              size="md"
+              className="w-full"
+              showIcon={false}
+              onClick={handleGoToChat}
+            >
+              AI 상담사와 대화하기
+            </ActionButton>
+          </div>
+        )}
 
         <div className="mb-[40px] mt-[16px] flex w-full items-center gap-[14px]">
-          <button className="flex h-[42px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200">
+          <button
+            onClick={handleShare}
+            className="flex h-[42px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200"
+          >
             <img src={shareIcon} alt="공유" className="h-[24px] w-[24px]" />
             <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-sub-500">
               공유하기
