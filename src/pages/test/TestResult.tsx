@@ -8,6 +8,8 @@ import {
   generateReport,
 } from "../../apis/test/test";
 import type { ReportListItem } from "../../types/test.type";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
@@ -26,6 +28,8 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<"집" | "사람" | "나무">("집");
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isPdfDownloading, setIsPdfDownloading] = useState(false);
 
   const searchParams = new URLSearchParams(location.search);
   const queryReportId = searchParams.get("reportId");
@@ -276,6 +280,46 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    if (!reportRef.current) return;
+    setIsPdfDownloading(true);
+
+    try {
+      const element = reportRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`${childName}_마음_이야기_리포트.pdf`);
+    } catch (error) {
+      console.error("❌ PDF 생성 중 오류가 발생했습니다:", error);
+      alert("PDF 저장 중 오류가 발생했습니다. 다시 시도해 주세요.");
+    } finally {
+      setIsPdfDownloading(false);
+    }
+  };
+
   if (needsPolling) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-white font-sans text-grey-600">
@@ -438,7 +482,10 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
       : reportAny?.raw_report?.report_json?.recommendations || [];
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-white font-sans pb-[40px]">
+    <div
+      ref={reportRef}
+      className="flex min-h-screen w-full flex-col bg-white font-sans pb-[40px]"
+    >
       <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-[24px] py-[20px]">
         {!isSharedView && (
           <img
@@ -753,10 +800,14 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
             </span>
           </button>
 
-          <button className="flex h-[42px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={isPdfDownloading}
+            className="flex h-[42px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200 disabled:opacity-50"
+          >
             <img src={saveIcon} alt="PDF 저장" className="h-[24px] w-[24px]" />
             <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-sub-500">
-              PDF 저장하기
+              {isPdfDownloading ? "저장 중..." : "PDF 저장하기"}
             </span>
           </button>
         </div>
