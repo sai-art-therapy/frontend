@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ReportSummaryCard } from "../../components/chat/ReportSummaryCard";
 import { ReportBottomSheet } from "../../components/chat/ReportBottomSheet";
@@ -15,7 +16,10 @@ import {
   getChatHistory,
   sendChatMessage,
   getSuggestedPrompts,
+  getChatSessions,
+  createChatSession,
 } from "../../apis/chat/chat";
+import { getReports } from "../../apis/test/test";
 
 interface Message {
   id: string;
@@ -23,24 +27,73 @@ interface Message {
   sender: "user" | "ai";
 }
 
+export interface CurrentReportType {
+  id: number;
+  name: string;
+  date: string;
+  orderLabel: string;
+}
+
 const ChatRoomPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
 
   const { reportId } = useParams<{ reportId: string }>();
   const numericSessionId = Number(reportId) || 0;
 
   const hasReport = location.state?.hasReport ?? numericSessionId !== 0;
 
-  const [currentReport, setCurrentReport] = useState({
-    name: "박카피",
-    date: "5월 7일",
-    count: 3,
-  });
+  const [currentReport, setCurrentReport] = useState<CurrentReportType | null>(
+    null,
+  );
   const [inputValue, setInputValue] = useState("");
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isAiThinking, setIsAiThinking] = useState(false);
+
+  const { data: rawReports = [] } = useAppQuery<any[]>(["reports"], getReports);
+
+  const reportList = rawReports.map((r: any) => ({
+    id: r.report_id,
+    name: r.child_name,
+    date: r.test_date_label,
+    orderLabel: r.test_order_label,
+  }));
+
+  const { data: sessionList = [] } = useAppQuery<any>(
+    ["chatSessions"],
+    getChatSessions,
+  );
+
+  const { mutate: handleStartNewChat } = useAppMutation<
+    any,
+    { child_id: number; htp_test_id: number; title: string }
+  >((body) => createChatSession(body), {
+    onSuccess: (response) => {
+      const createdRoomId =
+        response && typeof response === "object"
+          ? response.session_id || response.id
+          : response;
+
+      if (createdRoomId) {
+        navigate(`/chat/report/${createdRoomId}`, {
+          state: { hasReport: true },
+          replace: true,
+        });
+      }
+    },
+    onError: (error) => {
+      console.error(error);
+      alert("채팅방을 생성하지 못했습니다. 다시 시도해 주세요.");
+    },
+  });
+
+  useEffect(() => {
+    if (hasReport && reportList.length > 0 && !currentReport) {
+      setCurrentReport(reportList[0]);
+    }
+  }, [hasReport, reportList, currentReport]);
 
   const { data: historyData } = useAppQuery<any>(
     ["chatHistory", numericSessionId],
@@ -141,7 +194,7 @@ const ChatRoomPage = () => {
     (variables: { text: string }) =>
       sendChatMessage(numericSessionId, {
         message: variables.text,
-        report_id: 0,
+        report_id: currentReport?.id || 0,
       }),
     {
       onSuccess: (response) => {
@@ -166,20 +219,18 @@ const ChatRoomPage = () => {
           sender: "ai",
         };
         setMessages((prev) => [...prev, aiMessage]);
+
+        queryClient.invalidateQueries({
+          queryKey: ["chatHistory", numericSessionId],
+        });
       },
       onError: (error) => {
         setIsAiThinking(false);
-        console.error("메시지 전송 실패:", error);
+        console.error(error);
         alert("메시지 전송에 실패했습니다. 다시 시도해 주세요.");
       },
     },
   );
-
-  const mockReportList = [
-    { name: "카피바라", date: "5월 7일", count: 3 },
-    { name: "카카바라", date: "5월 7일", count: 2 },
-    { name: "피피바라", date: "5월 7일", count: 1 },
-  ];
 
   const dynamicQuestions: string[] = (() => {
     if (!suggestedPromptsData) {
@@ -262,6 +313,44 @@ const ChatRoomPage = () => {
     setIsAiThinking(false);
   };
 
+  const handleSelectReport = (report: CurrentReportType) => {
+    setIsBottomSheetOpen(false);
+
+    if (currentReport?.id === report.id) return;
+
+    setCurrentReport(report);
+    setMessages([]);
+    setInputValue("");
+    setIsAiThinking(false);
+
+    const sessionsArray = Array.isArray(sessionList)
+      ? sessionList
+      : sessionList?.data || [];
+
+    const existingSession = sessionsArray.find(
+      (session: any) => session.htp_test_id === report.id,
+    );
+
+    if (existingSession) {
+      const sessionId = existingSession.session_id || existingSession.id;
+      navigate(`/chat/report/${sessionId}`, {
+        state: { hasReport: true },
+        replace: true,
+      });
+    } else {
+      const targetRawReport = rawReports.find(
+        (r: any) => r.report_id === report.id,
+      );
+      const childId = targetRawReport?.child_id || 0;
+
+      handleStartNewChat({
+        child_id: childId,
+        htp_test_id: report.id,
+        title: `${report.name} 리포트 상담`,
+      });
+    }
+  };
+
   return (
     <div className="w-full bg-white font-sans relative min-h-screen flex flex-col items-center">
       <div className="w-full max-w-[402px] bg-white min-h-screen flex flex-col relative shadow-sm">
@@ -276,12 +365,13 @@ const ChatRoomPage = () => {
         </div>
 
         <main className="flex-1 flex flex-col items-center px-side pb-[140px] overflow-y-auto w-full">
-          {hasReport && (
+          {hasReport && currentReport && (
             <ReportSummaryCard
               name={currentReport.name}
               date={currentReport.date}
-              count={currentReport.count}
+              orderLabel={currentReport.orderLabel}
               onChangeClick={() => setIsBottomSheetOpen(true)}
+              onViewAllClick={() => navigate(`/report/${currentReport.id}`)}
             />
           )}
 
@@ -295,7 +385,7 @@ const ChatRoomPage = () => {
                 />
 
                 <h2 className="mt-[16px] text-center text-e-title-3 text-black font-sans whitespace-pre-line">
-                  {hasReport
+                  {hasReport && currentReport
                     ? `${currentReport.name}의 \n${currentReport.date} 리포트를 함께 보고있어요.\n어떤 부분부터 이야기해볼까요?`
                     : `안녕하세요,\n육아 고민이나 궁금한 점을\n편하게 물어보세요`}
                 </h2>
@@ -395,11 +485,8 @@ const ChatRoomPage = () => {
         <ReportBottomSheet
           isOpen={isBottomSheetOpen}
           onClose={() => setIsBottomSheetOpen(false)}
-          reports={mockReportList}
-          onSelectReport={(report) => {
-            setCurrentReport(report);
-            setIsBottomSheetOpen(false);
-          }}
+          reports={reportList}
+          onSelectReport={handleSelectReport}
         />
       </div>
     </div>
