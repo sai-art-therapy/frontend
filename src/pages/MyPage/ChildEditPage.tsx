@@ -17,7 +17,8 @@ const ChildEditPage = () => {
 
   const [childName, setChildName] = useState(child?.name ?? "");
   const [birthYear, setBirthYear] = useState(String(child?.birth_year ?? new Date().getFullYear()));
-  const [gender, setGender] = useState<"여아" | "남아">((child?.gender as "여아" | "남아") ?? "여아");
+  const toDisplay = (g?: string): "여아" | "남아" => g === "female" ? "여아" : "남아";
+  const [gender, setGender] = useState<"여아" | "남아">(toDisplay(child?.gender));
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
@@ -25,7 +26,7 @@ const ChildEditPage = () => {
   const hasChanges =
     childName !== (child?.name ?? "") ||
     birthYear !== String(child?.birth_year ?? new Date().getFullYear()) ||
-    gender !== ((child?.gender as "여아" | "남아") ?? "여아");
+    gender !== toDisplay(child?.gender);
 
   const yearOptions = Array.from({ length: 15 }, (_, i) => String(2024 - i));
 
@@ -36,7 +37,7 @@ const ChildEditPage = () => {
       await updateChild(child.child_id, {
         name: childName.trim(),
         birth_year: Number(birthYear),
-        gender,
+        gender: gender === "여아" ? "female" : "male",
       });
       navigate(-1);
     } catch (e) {

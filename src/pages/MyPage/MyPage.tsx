@@ -87,7 +87,7 @@ const MyPage = () => {
                 className="flex h-[64px] flex-1 cursor-pointer items-center justify-center rounded-[12px] border border-grey-100 bg-white px-[12px] transition-colors active:bg-grey-50"
               >
                 <div className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-grey-50">
-                  <span className="text-[26px]">{child.gender === "여아" ? "👧" : "👦"}</span>
+                  <span className="text-[26px]">{child.gender === "female" ? "👧" : "👦"}</span>
                 </div>
                 <span className="ml-[8px] whitespace-nowrap text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-black">
                   {child.name}

@@ -26,7 +26,7 @@ const RecentReportsCard: React.FC<RecentReportsCardProps> = ({
 
       <div className="flex flex-col w-full mt-[4px]">
         {reports.map((report, idx) => (
-          <React.Fragment key={report.report_id}>
+          <React.Fragment key={report.test_id}>
             <ReportItem report={report} />
             {idx < reports.length - 1 && (
               <div className="w-[338px] h-[1px] bg-grey-200" />

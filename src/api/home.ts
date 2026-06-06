@@ -1,10 +1,14 @@
 import axiosInstance from "../apis/axiosInstance";
 
 export interface Report {
-  report_id: number;
+  test_id: number;
+  child_id: number;
   child_name: string;
-  tested_at: string;
-  test_number?: number;
+  test_date: string;
+  test_date_label: string;
+  test_order: number;
+  test_order_label: string;
+  main_emotion: string;
 }
 
 export interface HomeResponse {
@@ -22,9 +26,15 @@ export interface HomeResponse {
   chatbot_card: {
     mode: string;
     title: string;
-    description: string;
+    description: string | null;
     child: { child_id: number; name: string } | null;
-    latest_test: { tested_at: string; test_number: number } | null;
+    latest_test: {
+      test_id: number;
+      days_ago: number;
+      days_ago_label: string;
+      test_order: number;
+      test_order_label: string;
+    } | null;
     recommended_questions: string[];
     button_text: string;
   };
