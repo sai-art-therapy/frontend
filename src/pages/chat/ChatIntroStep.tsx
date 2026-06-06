@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 import { useAppQuery, useAppMutation } from "../../hooks/apiHooks";
 import { getChatSessions, createChatSession } from "../../apis/chat/chat";
-import { getChildren } from "../../api/mypage";
+import { getChildren, getMyPage } from "../../api/mypage";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import logoIcon from "../../assets/icons/common/logo.svg";
@@ -18,6 +18,8 @@ const formatDate = (isoString: string) => {
 
 const ChatIntroStep = () => {
   const navigate = useNavigate();
+
+  const { data: myPageInfo } = useAppQuery<any>(["myPageInfo"], getMyPage);
 
   const { data: sessions = [] } = useAppQuery<any[]>(
     ["chatSessions"],
@@ -73,6 +75,8 @@ const ChatIntroStep = () => {
     });
   };
 
+  const nickname = myPageInfo?.user?.nickname ?? "회원";
+
   return (
     <div className="w-full bg-white font-sans relative min-h-screen">
       <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-side py-[20px]">
@@ -94,8 +98,8 @@ const ChatIntroStep = () => {
           />
           <div className="ml-[16px] flex w-[260px] items-center justify-center rounded-br-[20px] rounded-[20px] rounded-tl-none border border-solid border-grey-200 bg-white p-[16px] gap-[10px]">
             <p className="text-[16px] font-[400] leading-[21px] text-black tracking-[-0.41px] whitespace-pre-line">
-              성신님, 반가워요 어떤 리포트를 함께 살펴볼까요? 또는 일반적인 육아
-              고민도 편하게 이야기해 주세요.
+              {nickname}님, 반가워요 어떤 리포트를 함께 살펴볼까요? 또는
+              일반적인 육아 고민도 편하게 이야기해 주세요.
             </p>
           </div>
         </div>
