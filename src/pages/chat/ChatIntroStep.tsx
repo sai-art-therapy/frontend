@@ -32,16 +32,31 @@ const ChatIntroStep = () => {
     { child_id: number; htp_test_id: number; title: string }
   >((body) => createChatSession(body), {
     onSuccess: (response, variables) => {
+      // 📝 Swagger 스펙상 응답이 string(JSON 구조)으로 올 수 있으므로 안전하게 파싱합니다.
+      let parsedResponse = response;
+      if (typeof response === "string") {
+        try {
+          parsedResponse = JSON.parse(response);
+        } catch (e) {
+          // 단순 단일 숫자형 문자열인 경우 대비
+          parsedResponse = response;
+        }
+      }
+
       const createdRoomId =
-        response && typeof response === "object"
-          ? response.session_id || response.id
-          : response;
+        parsedResponse && typeof parsedResponse === "object"
+          ? parsedResponse.session_id || parsedResponse.id
+          : parsedResponse;
 
       if (createdRoomId) {
         const isReportChat = !!variables.htp_test_id;
 
+        // 🎯 내비게이트 시 htp_test_id를 reportId 상태로 정확하게 실어 보냅니다.
         navigate(`/chat/report/${createdRoomId}`, {
-          state: { hasReport: isReportChat },
+          state: {
+            hasReport: isReportChat,
+            reportId: variables.htp_test_id,
+          },
         });
       } else {
         console.error("방 생성 응답에 ID가 없습니다:", response);
@@ -138,7 +153,6 @@ const ChatIntroStep = () => {
                 </div>
 
                 <div className="ml-[8px] flex flex-col">
-                  {/* 4️⃣ 리포트 데이터에 맞게 라벨들을 매핑합니다. */}
                   <span className="text-[15px] font-[600] leading-[20px] text-black tracking-[-0.24px]">
                     {report.child_name}
                   </span>

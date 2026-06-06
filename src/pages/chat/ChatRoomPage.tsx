@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -40,7 +40,17 @@ const ChatRoomPage = () => {
   const queryClient = useQueryClient();
 
   const { reportId } = useParams<{ reportId: string }>();
-  const numericSessionId = Number(reportId) || 0;
+
+  const numericSessionId = (() => {
+    if (!reportId) return 0;
+    if (reportId.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(reportId);
+        return Number(parsed.session_id || parsed.id) || 0;
+      } catch (e) {}
+    }
+    return Number(reportId) || 0;
+  })();
 
   const hasReport = location.state?.hasReport ?? numericSessionId !== 0;
 
@@ -54,12 +64,14 @@ const ChatRoomPage = () => {
 
   const { data: rawReports = [] } = useAppQuery<any[]>(["reports"], getReports);
 
-  const reportList = rawReports.map((r: any) => ({
-    id: r.report_id,
-    name: r.child_name,
-    date: r.test_date_label,
-    orderLabel: r.test_order_label,
-  }));
+  const reportList = useMemo(() => {
+    return rawReports.map((r: any) => ({
+      id: r.report_id,
+      name: r.child_name,
+      date: r.test_date_label,
+      orderLabel: r.test_order_label,
+    }));
+  }, [rawReports]);
 
   const { data: sessionList = [] } = useAppQuery<any>(
     ["chatSessions"],
@@ -70,15 +82,22 @@ const ChatRoomPage = () => {
     any,
     { child_id: number; htp_test_id: number; title: string }
   >((body) => createChatSession(body), {
-    onSuccess: (response) => {
+    onSuccess: (response, variables) => {
+      let parsedResponse = response;
+      if (typeof response === "string") {
+        try {
+          parsedResponse = JSON.parse(response);
+        } catch (e) {}
+      }
+
       const createdRoomId =
-        response && typeof response === "object"
-          ? response.session_id || response.id
-          : response;
+        parsedResponse && typeof parsedResponse === "object"
+          ? parsedResponse.session_id || parsedResponse.id
+          : parsedResponse;
 
       if (createdRoomId) {
         navigate(`/chat/report/${createdRoomId}`, {
-          state: { hasReport: true },
+          state: { hasReport: true, reportId: variables.htp_test_id },
           replace: true,
         });
       }
@@ -90,18 +109,67 @@ const ChatRoomPage = () => {
   });
 
   useEffect(() => {
-    if (hasReport && reportList.length > 0 && !currentReport) {
-      setCurrentReport(reportList[0]);
-    }
-  }, [hasReport, reportList, currentReport]);
+    if (hasReport && reportList.length > 0) {
+      const stateReportId = location.state?.reportId;
+      if (stateReportId) {
+        const matchedReport = reportList.find(
+          (r) => r.id === Number(stateReportId),
+        );
+        if (matchedReport) {
+          setCurrentReport(matchedReport);
+          return;
+        }
+      }
 
-  const { data: historyData } = useAppQuery<any>(
+      let parsedSessions = sessionList;
+      if (typeof sessionList === "string") {
+        try {
+          parsedSessions = JSON.parse(sessionList);
+        } catch (e) {
+          parsedSessions = [];
+        }
+      }
+      const sessionsArray = Array.isArray(parsedSessions)
+        ? parsedSessions
+        : parsedSessions?.data || [];
+
+      const currentSession = sessionsArray.find(
+        (s: any) => (s.session_id || s.id) === numericSessionId,
+      );
+
+      if (currentSession?.htp_test_id) {
+        const matchedReport = reportList.find(
+          (r) => r.id === currentSession.htp_test_id,
+        );
+        if (matchedReport) {
+          setCurrentReport(matchedReport);
+          return;
+        }
+      }
+
+      setCurrentReport((prev) => {
+        if (!prev) return reportList[0];
+        return prev;
+      });
+    }
+  }, [hasReport, reportList, sessionList, numericSessionId, location.state]);
+
+  const { data: historyData, error: historyError } = useAppQuery<any>(
     ["chatHistory", numericSessionId],
     () => getChatHistory(numericSessionId),
     {
       enabled: numericSessionId !== 0,
     },
   );
+
+  useEffect(() => {
+    if (historyError) {
+      console.error(historyError);
+    }
+    if (historyData) {
+      console.log(historyData);
+    }
+  }, [historyData, historyError]);
 
   const { data: suggestedPromptsData } = useAppQuery<any>(
     ["suggestedPrompts", hasReport, numericSessionId],
@@ -121,6 +189,14 @@ const ChatRoomPage = () => {
     if (typeof historyData === "string") {
       const trimmedData = historyData.trim();
       if (!trimmedData) return;
+
+      if (trimmedData.startsWith("[") || trimmedData.startsWith("{")) {
+        try {
+          const parsed = JSON.parse(trimmedData);
+          parseArrayOrObjectHistory(parsed);
+          return;
+        } catch (e) {}
+      }
 
       if (trimmedData.includes("\n")) {
         const lines = trimmedData.split("\n");
@@ -144,43 +220,38 @@ const ChatRoomPage = () => {
           },
         ]);
       }
-    } else if (typeof historyData === "object" && !Array.isArray(historyData)) {
-      const targetArray = historyData.messages || historyData.history || [];
+    } else {
+      parseArrayOrObjectHistory(historyData);
+    }
+  }, [historyData]);
 
-      if (Array.isArray(targetArray)) {
-        const formattedMessages: Message[] = targetArray.map(
-          (item: any, idx: number) => {
-            const isUser = item.role === "user" || !!item.user_message;
-            const textContent =
-              item.answer ||
-              item.content ||
-              item.message ||
-              item.user_message?.content ||
-              item.assistant_message?.content ||
-              "";
+  const parseArrayOrObjectHistory = (data: any) => {
+    let targetArray = [];
+    if (Array.isArray(data)) {
+      targetArray = data;
+    } else if (typeof data === "object") {
+      targetArray = data.messages || data.history || data.data || [];
+    }
 
-            return {
-              id: String(item.message_id || item.id || idx),
-              text: textContent,
-              sender: isUser ? "user" : "ai",
-            };
-          },
-        );
-        setMessages(formattedMessages);
-      }
-    } else if (Array.isArray(historyData)) {
-      const formattedMessages: Message[] = historyData.map(
+    if (Array.isArray(targetArray)) {
+      const formattedMessages: Message[] = targetArray.map(
         (item: any, idx: number) => {
-          const isUser = item.sender === "user" || item.role === "user";
+          const isUser =
+            item.role === "user" ||
+            item.sender === "user" ||
+            !!item.user_message;
+
           const textContent =
             item.answer ||
+            item.content ||
             item.message ||
             item.text ||
-            item.content ||
-            String(item);
+            item.user_message?.content ||
+            item.assistant_message?.content ||
+            (typeof item === "string" ? item : "");
 
           return {
-            id: String(item.id || idx),
+            id: String(item.message_id || item.id || idx),
             text: textContent,
             sender: isUser ? "user" : "ai",
           };
@@ -188,7 +259,7 @@ const ChatRoomPage = () => {
       );
       setMessages(formattedMessages);
     }
-  }, [historyData]);
+  };
 
   const { mutate: handleSendMessageApi } = useAppMutation<any, any>(
     (variables: { text: string }) =>
@@ -201,7 +272,6 @@ const ChatRoomPage = () => {
         setIsAiThinking(false);
 
         let responseText = "";
-
         if (response && typeof response === "object") {
           responseText =
             response.answer ||
@@ -323,9 +393,15 @@ const ChatRoomPage = () => {
     setInputValue("");
     setIsAiThinking(false);
 
-    const sessionsArray = Array.isArray(sessionList)
-      ? sessionList
-      : sessionList?.data || [];
+    let parsedSessions = sessionList;
+    if (typeof sessionList === "string") {
+      try {
+        parsedSessions = JSON.parse(sessionList);
+      } catch (e) {}
+    }
+    const sessionsArray = Array.isArray(parsedSessions)
+      ? parsedSessions
+      : parsedSessions?.data || [];
 
     const existingSession = sessionsArray.find(
       (session: any) => session.htp_test_id === report.id,
@@ -334,7 +410,7 @@ const ChatRoomPage = () => {
     if (existingSession) {
       const sessionId = existingSession.session_id || existingSession.id;
       navigate(`/chat/report/${sessionId}`, {
-        state: { hasReport: true },
+        state: { hasReport: true, reportId: report.id },
         replace: true,
       });
     } else {
