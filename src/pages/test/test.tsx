@@ -88,17 +88,10 @@ const Test = () => {
         <h3 className="ml-side text-e-body-1 text-black">최근 검사 결과</h3>
 
         {reports && reports.length > 0 ? (
-          <div className="mx-side mt-[16px] flex flex-col items-start justify-center rounded-md border border-grey-200 bg-white p-[16px_16px_8px_16px]">
-            <div className="mb-[4px] flex items-center">
-              <img
-                src={calendarIcon}
-                alt="달력"
-                className="h-icon-sm w-icon-sm"
-                onError={(e) => (e.currentTarget.style.display = "none")}
-              />
-              <h3 className="ml-[8px] text-e-body-1 text-black">
-                최근 검사 리포트를 확인해보세요
-              </h3>
+          <div className="mx-side mt-[16px] flex flex-col items-start justify-center rounded-md border border-grey-200 bg-white p-[4px_16px_4px_16px]">
+            <div className=" flex items-center">
+              
+              
             </div>
 
             <div className="mt-[4px] flex w-full flex-col">
