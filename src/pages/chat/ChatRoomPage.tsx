@@ -371,7 +371,9 @@ const ChatRoomPage = () => {
               date={currentReport.date}
               orderLabel={currentReport.orderLabel}
               onChangeClick={() => setIsBottomSheetOpen(true)}
-              onViewAllClick={() => navigate(`/report/${currentReport.id}`)}
+              onViewAllClick={() =>
+                navigate(`/test-result?reportId=${currentReport.id}`)
+              }
             />
           )}
 

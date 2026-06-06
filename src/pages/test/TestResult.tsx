@@ -80,10 +80,13 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
   const hasRequestedReport = useRef(false);
 
   useEffect(() => {
-    if (stateReportId && stateReportId !== resolvedReportId) {
-      setResolvedReportId(Number(stateReportId));
+    const currentTargetId =
+      stateReportId ?? (queryReportId ? Number(queryReportId) : undefined);
+
+    if (currentTargetId && currentTargetId !== resolvedReportId) {
+      setResolvedReportId(currentTargetId);
     }
-  }, [stateReportId]);
+  }, [stateReportId, queryReportId, resolvedReportId]);
 
   useEffect(() => {
     if (isSharedView) return;
