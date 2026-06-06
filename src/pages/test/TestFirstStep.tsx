@@ -78,7 +78,7 @@ const TestFirstStep = () => {
                   <div className="flex items-center gap-[10px]">
                     <div className="flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full bg-grey-50">
                       <span className="text-[32px]">
-                        {child.gender === "male" ? "👦" : "👧"}
+                        {child.gender === "male" ? "👦🏻" : "🧒🏻"}
                       </span>
                     </div>
                     <div className="flex flex-col">

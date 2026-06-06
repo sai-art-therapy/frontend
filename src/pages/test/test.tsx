@@ -103,7 +103,7 @@ const Test = () => {
                   >
                     <div className="flex items-center gap-[12px]">
                       <div className="flex h-[48px] w-[48px] items-center justify-center rounded-full bg-grey-50 text-[24px]">
-                        {report.gender === "female" ? "👧🏻" : "👦🏻"}
+                        {report.gender === "female" ? "🧒🏻" : "👦🏻"}
                       </div>
                       <div className="flex flex-col gap-[2px]">
                         <span className="text-[16px] font-semibold text-black">
