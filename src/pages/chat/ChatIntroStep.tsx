@@ -31,30 +31,30 @@ const ChatIntroStep = () => {
 
   const { mutate: handleStartNewChat, isPending: isCreating } = useAppMutation<
     any,
-    any
-  >(
-    (body: { child_id: number; htp_test_id: number; title: string }) =>
-      createChatSession(body),
-    {
-      onSuccess: (response) => {
-        const createdRoomId =
-          response && typeof response === "object"
-            ? response.session_id || response.id
-            : response;
+    { child_id: number; htp_test_id: number; title: string }
+  >((body) => createChatSession(body), {
+    onSuccess: (response, variables) => {
+      const createdRoomId =
+        response && typeof response === "object"
+          ? response.session_id || response.id
+          : response;
 
-        if (createdRoomId) {
-          navigate(`/chat/report/${createdRoomId}`);
-        } else {
-          console.error("방 생성 응답에 ID가 없습니다:", response);
-          alert("채팅방 정보가 올바르지 않습니다.");
-        }
-      },
-      onError: (error) => {
-        console.error("새 채팅 시작 실패:", error);
-        alert("채팅방을 생성하지 못했습니다. 다시 시도해 주세요.");
-      },
+      if (createdRoomId) {
+        const isReportChat = !!variables.htp_test_id;
+
+        navigate(`/chat/report/${createdRoomId}`, {
+          state: { hasReport: isReportChat },
+        });
+      } else {
+        console.error("방 생성 응답에 ID가 없습니다:", response);
+        alert("채팅방 정보가 올바르지 않습니다.");
+      }
     },
-  );
+    onError: (error) => {
+      console.error("새 채팅 시작 실패:", error);
+      alert("채팅방을 생성하지 못했습니다. 다시 시도해 주세요.");
+    },
+  });
 
   const handleGeneralChatClick = () => {
     if (children.length === 0) {
@@ -68,7 +68,7 @@ const ChatIntroStep = () => {
 
     handleStartNewChat({
       child_id: targetChildId,
-      htp_test_id: null as any,
+      htp_test_id: null as unknown as number,
       title: "일반 육아 상담",
     });
   };
@@ -109,7 +109,9 @@ const ChatIntroStep = () => {
             <button
               key={`session-${session.id || index}`}
               onClick={() =>
-                navigate(`/chat/report/${session.session_id || session.id}`)
+                navigate(`/chat/report/${session.session_id || session.id}`, {
+                  state: { hasReport: true },
+                })
               }
               className="flex w-[370px] cursor-pointer max-w-full items-center justify-between rounded-[12px] bg-grey-50 p-[12px] text-left transition-colors hover:bg-grey-100"
             >

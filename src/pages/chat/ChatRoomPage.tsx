@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { ReportSummaryCard } from "../../components/chat/ReportSummaryCard";
 import { ReportBottomSheet } from "../../components/chat/ReportBottomSheet";
@@ -25,11 +25,12 @@ interface Message {
 
 const ChatRoomPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { reportId } = useParams<{ reportId: string }>();
   const numericSessionId = Number(reportId) || 0;
 
-  const [hasReport] = useState<boolean>(false);
+  const hasReport = location.state?.hasReport ?? numericSessionId !== 0;
 
   const [currentReport, setCurrentReport] = useState({
     name: "박카피",
@@ -57,14 +58,12 @@ const ChatRoomPage = () => {
         htp_test_id: hasReport ? numericSessionId : null,
       }),
     {
-      enabled: numericSessionId !== 0,
+      enabled: numericSessionId !== 0 || !hasReport,
     },
   );
 
   useEffect(() => {
     if (!historyData) return;
-
-    console.log("백엔드가 내려준 원본 상담 내용 데이터:", historyData);
 
     if (typeof historyData === "string") {
       const trimmedData = historyData.trim();
@@ -147,7 +146,6 @@ const ChatRoomPage = () => {
     {
       onSuccess: (response) => {
         setIsAiThinking(false);
-        console.log("AI가 반환한 답변 데이터:", response);
 
         let responseText = "";
 
@@ -184,14 +182,49 @@ const ChatRoomPage = () => {
   ];
 
   const dynamicQuestions: string[] = (() => {
-    if (Array.isArray(suggestedPromptsData)) {
+    if (!suggestedPromptsData) {
+      return hasReport
+        ? [
+            "민준이 또래는 보통 어떤가요?",
+            "이번 검사 결과를 쉽게 설명해 주세요",
+            "함께할 활동을 추천해주세요",
+            "지난 검사와 비교하면 어떤가요?",
+          ]
+        : [
+            "HTP 검사가 뭔가요?",
+            "아이가 그림을 잘 안 그리려고 해요",
+            "요즘 아이가 부쩍 짜증을 내요",
+          ];
+    }
+
+    if (
+      Array.isArray(suggestedPromptsData) &&
+      suggestedPromptsData.length > 0
+    ) {
       return suggestedPromptsData;
     }
-    if (suggestedPromptsData && typeof suggestedPromptsData === "object") {
-      const target =
-        suggestedPromptsData.prompts || suggestedPromptsData.data || [];
-      if (Array.isArray(target)) return target;
+
+    if (typeof suggestedPromptsData === "string") {
+      try {
+        const parsed = JSON.parse(suggestedPromptsData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {
+        if (suggestedPromptsData.includes("\n")) {
+          return suggestedPromptsData.split("\n").filter(Boolean);
+        }
+        return [suggestedPromptsData];
+      }
     }
+
+    if (typeof suggestedPromptsData === "object") {
+      const target = suggestedPromptsData.data || suggestedPromptsData.prompts;
+      if (Array.isArray(target) && target.length > 0) {
+        return target;
+      }
+    }
+
     return hasReport
       ? [
           "민준이 또래는 보통 어떤가요?",
