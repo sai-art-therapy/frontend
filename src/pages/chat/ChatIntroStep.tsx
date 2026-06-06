@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 import { useAppQuery, useAppMutation } from "../../hooks/apiHooks";
-import { getChatSessions, createChatSession } from "../../apis/chat/chat";
+import { createChatSession } from "../../apis/chat/chat";
 import { getChildren, getMyPage } from "../../api/mypage";
+import { getReports } from "../../apis/test/test";
+import type { ReportListItem } from "../../types/test.type";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import logoIcon from "../../assets/icons/common/logo.svg";
@@ -10,25 +12,19 @@ import boyImage from "../../assets/icons/test/boy.png";
 import chevronIcon from "../../assets/icons/common/chevron.svg";
 import chatIcon from "../../assets/icons/chat/chat.svg";
 
-const formatDate = (isoString: string) => {
-  if (!isoString) return "오늘";
-  const date = new Date(isoString);
-  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
-};
-
 const ChatIntroStep = () => {
   const navigate = useNavigate();
 
   const { data: myPageInfo } = useAppQuery<any>(["myPageInfo"], getMyPage);
 
-  const { data: sessions = [] } = useAppQuery<any[]>(
-    ["chatSessions"],
-    getChatSessions,
-  );
-
   const { data: children = [] } = useAppQuery<any[]>(
     ["childrenList"],
     getChildren,
+  );
+
+  const { data: reports = [] } = useAppQuery<ReportListItem[]>(
+    ["reports"],
+    getReports,
   );
 
   const { mutate: handleStartNewChat, isPending: isCreating } = useAppMutation<
@@ -109,14 +105,27 @@ const ChatIntroStep = () => {
         </h2>
 
         <div className="mt-[16px] flex w-full flex-col gap-[8px]">
-          {sessions.map((session, index) => (
+          {reports.map((report, index) => (
             <button
-              key={`session-${session.id || index}`}
-              onClick={() =>
-                navigate(`/chat/report/${session.session_id || session.id}`, {
-                  state: { hasReport: true },
-                })
-              }
+              key={`report-${report.report_id}`}
+              onClick={() => {
+                const targetChildId =
+                  (report as any).child_id ||
+                  children.find((c) => c.name === report.child_name)
+                    ?.child_id ||
+                  children[0]?.child_id;
+
+                if (!targetChildId) {
+                  alert("자녀 정보를 찾을 수 없습니다.");
+                  return;
+                }
+
+                handleStartNewChat({
+                  child_id: targetChildId,
+                  htp_test_id: report.report_id,
+                  title: `${report.child_name} 리포트 상담`,
+                });
+              }}
               className="flex w-[370px] cursor-pointer max-w-full items-center justify-between rounded-[12px] bg-grey-50 p-[12px] text-left transition-colors hover:bg-grey-100"
             >
               <div className="flex items-center">
@@ -129,13 +138,14 @@ const ChatIntroStep = () => {
                 </div>
 
                 <div className="ml-[8px] flex flex-col">
+                  {/* 4️⃣ 리포트 데이터에 맞게 라벨들을 매핑합니다. */}
                   <span className="text-[15px] font-[600] leading-[20px] text-black tracking-[-0.24px]">
-                    {session.child_name || "자녀 정보 없음"}
+                    {report.child_name}
                   </span>
                   <div className="flex items-center text-[13px] font-[400] text-black tracking-[-0.08px]">
-                    <span>{formatDate(session.created_at)}</span>
+                    <span>{report.test_date_label}</span>
                     <span className="mx-[2px]">・</span>
-                    <span>{session.test_count || 0}번째 검사</span>
+                    <span>{report.test_order_label}</span>
                   </div>
                 </div>
               </div>
