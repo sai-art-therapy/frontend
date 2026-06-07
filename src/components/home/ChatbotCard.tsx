@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
 import chatSearchIcon from "../../assets/icons/home/chat-search.svg";
@@ -8,19 +9,17 @@ import chevronIcon from "../../assets/icons/common/chevron.svg";
 interface ChatbotCardProps {
   hasHistory: boolean;
   title: string;
-  description: string;
+  description: string | null;
   recommendedQuestions: string[];
   buttonText: string;
   child: { child_id: number; name: string } | null;
-  latestTest: { tested_at: string; test_number: number } | null;
-}
-
-function formatDaysAgo(dateStr: string): string {
-  const diff = Math.floor(
-    (Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  if (diff === 0) return "오늘";
-  return `${diff}일 전`;
+  latestTest: {
+    test_id: number;
+    days_ago: number;
+    days_ago_label: string;
+    test_order: number;
+    test_order_label: string;
+  } | null;
 }
 
 const ChatbotCard: React.FC<ChatbotCardProps> = ({
@@ -32,6 +31,16 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({
   child,
   latestTest,
 }) => {
+  const navigate = useNavigate();
+
+  const handleChatNavigate = () => {
+    if (latestTest) {
+      navigate(`/chat/report/${latestTest.test_id}`);
+    } else {
+      navigate("/chat/intro-step");
+    }
+  };
+
   return (
     <div className="flex w-[370px] p-side flex-col justify-center items-start rounded-md bg-white mb-side">
       <div className="flex items-center gap-[10px] mb-side w-full">
@@ -69,9 +78,9 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({
             <span className="text-black text-e-subheadline">{child.name}</span>
           </div>
           <div className="flex items-center text-black text-footnote">
-            <span>{formatDaysAgo(latestTest.tested_at)}</span>
+            <span>{latestTest.days_ago_label}</span>
             <span className="mx-[2px]">・</span>
-            <span>{latestTest.test_number} 검사</span>
+            <span>{latestTest.test_order_label}</span>
           </div>
         </div>
       ) : (
@@ -87,6 +96,7 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({
         {recommendedQuestions.map((question, idx) => (
           <div
             key={idx}
+            onClick={handleChatNavigate}
             className="flex w-[338px] p-[12px_16px] justify-between items-center rounded-sm bg-grey-50 cursor-pointer hover:bg-grey-100 transition-colors"
           >
             <span
@@ -110,6 +120,7 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({
           size="md"
           showIcon={false}
           className="w-full bg-grey-800 rounded-sm"
+          onClick={handleChatNavigate}
         >
           {buttonText}
         </ActionButton>

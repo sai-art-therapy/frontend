@@ -841,6 +841,15 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
             </span>
           </button>
         </div>
+
+        <button
+          onClick={() => navigate("/home")}
+          className="mb-[40px] mt-[12px] flex h-[42px] w-full cursor-pointer items-center justify-center rounded-[8px] bg-grey-100 transition-colors active:bg-grey-200"
+        >
+          <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-grey-700">
+            홈으로 돌아가기
+          </span>
+        </button>
       </main>
     </div>
   );
