@@ -185,7 +185,7 @@ export default function SignupChildPage() {
             await apiClient.post('/children', {
               name,
               birth_year: birthYear,
-              gender,
+              gender: gender === "여아" ? "female" : "male",
             })
             navigate("/home")
           }}

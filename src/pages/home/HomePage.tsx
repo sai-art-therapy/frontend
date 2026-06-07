@@ -54,7 +54,7 @@ const HomePage: React.FC = () => {
       <div className="no-scrollbar flex w-full min-h-screen flex-col items-center bg-grey-50 pb-[40px] font-sans overflow-y-auto select-none">
         <div className="w-full max-w-[402px] flex flex-col items-center px-side ">
           <h1
-            className="w-full text-left text-black text-e-title-3 font-bold mb-[16px] mt-[16px]"
+            className="w-full text-left text-black text-e-title-2 font-bold  py-[20px]"
             style={{ fontFeatureSettings: "'liga' off, 'clig' off" }}
           >
             {data.headline}

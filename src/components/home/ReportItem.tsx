@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import type { Report } from "../../api/home";
 import boyIcon from "../../assets/icons/test/boy.png";
 import chevronIcon from "../../assets/icons/common/chevron.svg";
@@ -7,14 +8,14 @@ interface ReportItemProps {
   report: Report;
 }
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
-}
-
 const ReportItem: React.FC<ReportItemProps> = ({ report }) => {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex w-[338px] py-[12px] justify-between items-center bg-white cursor-pointer hover:opacity-80 transition-opacity">
+    <div
+      onClick={() => navigate(`/chat/report/${report.test_id}`)}
+      className="flex w-[338px] py-[12px] justify-between items-center bg-white cursor-pointer hover:opacity-80 transition-opacity"
+    >
       <div className="flex items-center gap-[8px]">
         <div className="flex w-[40px] h-[40px] justify-center items-center rounded-full bg-grey-50 overflow-hidden">
           <img
@@ -27,13 +28,9 @@ const ReportItem: React.FC<ReportItemProps> = ({ report }) => {
         <div className="flex flex-col">
           <span className="text-black text-e-subheadline">{report.child_name}</span>
           <div className="flex items-center mt-[2px] text-grey-700 text-footnote">
-            <span>{formatDate(report.tested_at)}</span>
-            {report.test_number !== undefined && (
-              <>
-                <span className="mx-[2px]">・</span>
-                <span>{report.test_number} 검사</span>
-              </>
-            )}
+            <span>{report.test_date_label}</span>
+            <span className="mx-[2px]">・</span>
+            <span>{report.test_order_label}</span>
           </div>
         </div>
       </div>

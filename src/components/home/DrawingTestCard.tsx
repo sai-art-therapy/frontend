@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 import heartSearchIcon from "../../assets/icons/home/heart-search.svg";
 import StepGuide from "./StepGuide";
@@ -16,6 +17,8 @@ const DrawingTestCard: React.FC<DrawingTestCardProps> = ({
   subtitle,
   buttonText,
 }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex w-[370px] p-side flex-col justify-center items-start rounded-md bg-white mb-side">
       <div className="w-full flex justify-between items-start">
@@ -48,6 +51,7 @@ const DrawingTestCard: React.FC<DrawingTestCardProps> = ({
           size="md"
           showIcon={false}
           className="w-full bg-main-100 rounded-sm"
+          onClick={() => navigate("/test-start")}
         >
           <span className="text-main-500 text-e-subheadline">{buttonText}</span>
         </ActionButton>
