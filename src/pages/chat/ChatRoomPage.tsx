@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ReportSummaryCard } from "../../components/chat/ReportSummaryCard";
 import { ReportBottomSheet } from "../../components/chat/ReportBottomSheet";
@@ -15,7 +16,10 @@ import {
   getChatHistory,
   sendChatMessage,
   getSuggestedPrompts,
+  getChatSessions,
+  createChatSession,
 } from "../../apis/chat/chat";
+import { getReports } from "../../apis/test/test";
 
 interface Message {
   id: string;
@@ -23,31 +27,149 @@ interface Message {
   sender: "user" | "ai";
 }
 
+export interface CurrentReportType {
+  id: number;
+  name: string;
+  date: string;
+  orderLabel: string;
+}
+
 const ChatRoomPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
 
   const { reportId } = useParams<{ reportId: string }>();
-  const numericSessionId = Number(reportId) || 0;
 
-  const [hasReport] = useState<boolean>(false);
+  const numericSessionId = (() => {
+    if (!reportId) return 0;
+    if (reportId.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(reportId);
+        return Number(parsed.session_id || parsed.id) || 0;
+      } catch (e) {}
+    }
+    return Number(reportId) || 0;
+  })();
 
-  const [currentReport, setCurrentReport] = useState({
-    name: "박카피",
-    date: "5월 7일",
-    count: 3,
-  });
+  const hasReport = location.state?.hasReport ?? numericSessionId !== 0;
+
+  const [currentReport, setCurrentReport] = useState<CurrentReportType | null>(
+    null,
+  );
   const [inputValue, setInputValue] = useState("");
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isAiThinking, setIsAiThinking] = useState(false);
 
-  const { data: historyData } = useAppQuery<any>(
+  const { data: rawReports = [] } = useAppQuery<any[]>(["reports"], getReports);
+
+  const reportList = useMemo(() => {
+    return rawReports.map((r: any) => ({
+      id: r.report_id,
+      name: r.child_name,
+      date: r.test_date_label,
+      orderLabel: r.test_order_label,
+    }));
+  }, [rawReports]);
+
+  const { data: sessionList = [] } = useAppQuery<any>(
+    ["chatSessions"],
+    getChatSessions,
+  );
+
+  const { mutate: handleStartNewChat } = useAppMutation<
+    any,
+    { child_id: number; htp_test_id: number; title: string }
+  >((body) => createChatSession(body), {
+    onSuccess: (response, variables) => {
+      let parsedResponse = response;
+      if (typeof response === "string") {
+        try {
+          parsedResponse = JSON.parse(response);
+        } catch (e) {}
+      }
+
+      const createdRoomId =
+        parsedResponse && typeof parsedResponse === "object"
+          ? parsedResponse.session_id || parsedResponse.id
+          : parsedResponse;
+
+      if (createdRoomId) {
+        navigate(`/chat/report/${createdRoomId}`, {
+          state: { hasReport: true, reportId: variables.htp_test_id },
+          replace: true,
+        });
+      }
+    },
+    onError: (error) => {
+      console.error(error);
+      alert("채팅방을 생성하지 못했습니다. 다시 시도해 주세요.");
+    },
+  });
+
+  useEffect(() => {
+    if (hasReport && reportList.length > 0) {
+      const stateReportId = location.state?.reportId;
+      if (stateReportId) {
+        const matchedReport = reportList.find(
+          (r) => r.id === Number(stateReportId),
+        );
+        if (matchedReport) {
+          setCurrentReport(matchedReport);
+          return;
+        }
+      }
+
+      let parsedSessions = sessionList;
+      if (typeof sessionList === "string") {
+        try {
+          parsedSessions = JSON.parse(sessionList);
+        } catch (e) {
+          parsedSessions = [];
+        }
+      }
+      const sessionsArray = Array.isArray(parsedSessions)
+        ? parsedSessions
+        : parsedSessions?.data || [];
+
+      const currentSession = sessionsArray.find(
+        (s: any) => (s.session_id || s.id) === numericSessionId,
+      );
+
+      if (currentSession?.htp_test_id) {
+        const matchedReport = reportList.find(
+          (r) => r.id === currentSession.htp_test_id,
+        );
+        if (matchedReport) {
+          setCurrentReport(matchedReport);
+          return;
+        }
+      }
+
+      setCurrentReport((prev) => {
+        if (!prev) return reportList[0];
+        return prev;
+      });
+    }
+  }, [hasReport, reportList, sessionList, numericSessionId, location.state]);
+
+  const { data: historyData, error: historyError } = useAppQuery<any>(
     ["chatHistory", numericSessionId],
     () => getChatHistory(numericSessionId),
     {
       enabled: numericSessionId !== 0,
     },
   );
+
+  useEffect(() => {
+    if (historyError) {
+      console.error(historyError);
+    }
+    if (historyData) {
+      console.log(historyData);
+    }
+  }, [historyData, historyError]);
 
   const { data: suggestedPromptsData } = useAppQuery<any>(
     ["suggestedPrompts", hasReport, numericSessionId],
@@ -57,18 +179,108 @@ const ChatRoomPage = () => {
         htp_test_id: hasReport ? numericSessionId : null,
       }),
     {
-      enabled: numericSessionId !== 0,
+      enabled: numericSessionId !== 0 || !hasReport,
     },
   );
+
+  const parseArrayOrObjectHistory = (data: any) => {
+    let parsedData = data;
+    if (typeof parsedData === "string") {
+      try {
+        parsedData = JSON.parse(parsedData);
+      } catch (e) {}
+    }
+
+    let targetArray = [];
+    if (Array.isArray(parsedData)) {
+      targetArray = parsedData;
+    } else if (typeof parsedData === "object" && parsedData !== null) {
+      targetArray =
+        parsedData.messages ||
+        parsedData.history ||
+        parsedData.data ||
+        parsedData.chat_history ||
+        parsedData.items ||
+        Object.values(parsedData).find(Array.isArray) ||
+        [];
+    }
+
+    if (Array.isArray(targetArray) && targetArray.length > 0) {
+      const formattedMessages: Message[] = [];
+
+      targetArray.forEach((item: any, idx: number) => {
+        const hasUserContent =
+          item.user_message || item.question || item.prompt;
+        const hasAiContent =
+          item.assistant_message || item.answer || item.bot_message;
+
+        if (hasUserContent && hasAiContent && !item.role && !item.sender) {
+          formattedMessages.push({
+            id: String(item.id || item.message_id || idx) + "-user",
+            text:
+              typeof hasUserContent === "string"
+                ? hasUserContent
+                : hasUserContent.content || "",
+            sender: "user",
+          });
+          formattedMessages.push({
+            id: String(item.id || item.message_id || idx) + "-ai",
+            text:
+              typeof hasAiContent === "string"
+                ? hasAiContent
+                : hasAiContent.content || "",
+            sender: "ai",
+          });
+          return;
+        }
+
+        const isUser =
+          item.role === "user" || item.sender === "user" || !!item.user_message;
+
+        const textContent =
+          item.answer ||
+          item.content ||
+          item.message ||
+          item.text ||
+          item.user_message?.content ||
+          item.assistant_message?.content ||
+          (typeof item === "string" ? item : "");
+
+        if (textContent) {
+          formattedMessages.push({
+            id: String(item.message_id || item.id || idx),
+            text: textContent,
+            sender: isUser ? "user" : "ai",
+          });
+        }
+      });
+
+      setMessages(formattedMessages);
+    }
+  };
 
   useEffect(() => {
     if (!historyData) return;
 
-    console.log("백엔드가 내려준 원본 상담 내용 데이터:", historyData);
-
     if (typeof historyData === "string") {
-      const trimmedData = historyData.trim();
+      let trimmedData = historyData.trim();
       if (!trimmedData) return;
+
+      if (trimmedData.startsWith('"') && trimmedData.endsWith('"')) {
+        try {
+          trimmedData = JSON.parse(trimmedData);
+        } catch (e) {}
+      }
+
+      if (trimmedData.startsWith("[") || trimmedData.startsWith("{")) {
+        try {
+          const parsed = JSON.parse(trimmedData);
+          parseArrayOrObjectHistory(parsed);
+          return;
+        } catch (e) {
+          console.error("채팅 내역 JSON 파싱 에러:", e);
+        }
+      }
 
       if (trimmedData.includes("\n")) {
         const lines = trimmedData.split("\n");
@@ -92,49 +304,8 @@ const ChatRoomPage = () => {
           },
         ]);
       }
-    } else if (typeof historyData === "object" && !Array.isArray(historyData)) {
-      const targetArray = historyData.messages || historyData.history || [];
-
-      if (Array.isArray(targetArray)) {
-        const formattedMessages: Message[] = targetArray.map(
-          (item: any, idx: number) => {
-            const isUser = item.role === "user" || !!item.user_message;
-            const textContent =
-              item.answer ||
-              item.content ||
-              item.message ||
-              item.user_message?.content ||
-              item.assistant_message?.content ||
-              "";
-
-            return {
-              id: String(item.message_id || item.id || idx),
-              text: textContent,
-              sender: isUser ? "user" : "ai",
-            };
-          },
-        );
-        setMessages(formattedMessages);
-      }
-    } else if (Array.isArray(historyData)) {
-      const formattedMessages: Message[] = historyData.map(
-        (item: any, idx: number) => {
-          const isUser = item.sender === "user" || item.role === "user";
-          const textContent =
-            item.answer ||
-            item.message ||
-            item.text ||
-            item.content ||
-            String(item);
-
-          return {
-            id: String(item.id || idx),
-            text: textContent,
-            sender: isUser ? "user" : "ai",
-          };
-        },
-      );
-      setMessages(formattedMessages);
+    } else {
+      parseArrayOrObjectHistory(historyData);
     }
   }, [historyData]);
 
@@ -142,15 +313,13 @@ const ChatRoomPage = () => {
     (variables: { text: string }) =>
       sendChatMessage(numericSessionId, {
         message: variables.text,
-        report_id: 0,
+        report_id: currentReport?.id || 0,
       }),
     {
       onSuccess: (response) => {
         setIsAiThinking(false);
-        console.log("AI가 반환한 답변 데이터:", response);
 
         let responseText = "";
-
         if (response && typeof response === "object") {
           responseText =
             response.answer ||
@@ -168,30 +337,63 @@ const ChatRoomPage = () => {
           sender: "ai",
         };
         setMessages((prev) => [...prev, aiMessage]);
+
+        queryClient.invalidateQueries({
+          queryKey: ["chatHistory", numericSessionId],
+        });
       },
       onError: (error) => {
         setIsAiThinking(false);
-        console.error("메시지 전송 실패:", error);
+        console.error(error);
         alert("메시지 전송에 실패했습니다. 다시 시도해 주세요.");
       },
     },
   );
 
-  const mockReportList = [
-    { name: "카피바라", date: "5월 7일", count: 3 },
-    { name: "카카바라", date: "5월 7일", count: 2 },
-    { name: "피피바라", date: "5월 7일", count: 1 },
-  ];
-
   const dynamicQuestions: string[] = (() => {
-    if (Array.isArray(suggestedPromptsData)) {
+    if (!suggestedPromptsData) {
+      return hasReport
+        ? [
+            "민준이 또래는 보통 어떤가요?",
+            "이번 검사 결과를 쉽게 설명해 주세요",
+            "함께할 활동을 추천해주세요",
+            "지난 검사와 비교하면 어떤가요?",
+          ]
+        : [
+            "HTP 검사가 뭔가요?",
+            "아이가 그림을 잘 안 그리려고 해요",
+            "요즘 아이가 부쩍 짜증을 내요",
+          ];
+    }
+
+    if (
+      Array.isArray(suggestedPromptsData) &&
+      suggestedPromptsData.length > 0
+    ) {
       return suggestedPromptsData;
     }
-    if (suggestedPromptsData && typeof suggestedPromptsData === "object") {
-      const target =
-        suggestedPromptsData.prompts || suggestedPromptsData.data || [];
-      if (Array.isArray(target)) return target;
+
+    if (typeof suggestedPromptsData === "string") {
+      try {
+        const parsed = JSON.parse(suggestedPromptsData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {
+        if (suggestedPromptsData.includes("\n")) {
+          return suggestedPromptsData.split("\n").filter(Boolean);
+        }
+        return [suggestedPromptsData];
+      }
     }
+
+    if (typeof suggestedPromptsData === "object") {
+      const target = suggestedPromptsData.data || suggestedPromptsData.prompts;
+      if (Array.isArray(target) && target.length > 0) {
+        return target;
+      }
+    }
+
     return hasReport
       ? [
           "민준이 또래는 보통 어떤가요?",
@@ -229,6 +431,50 @@ const ChatRoomPage = () => {
     setIsAiThinking(false);
   };
 
+  const handleSelectReport = (report: CurrentReportType) => {
+    setIsBottomSheetOpen(false);
+
+    if (currentReport?.id === report.id) return;
+
+    setCurrentReport(report);
+    setMessages([]);
+    setInputValue("");
+    setIsAiThinking(false);
+
+    let parsedSessions = sessionList;
+    if (typeof sessionList === "string") {
+      try {
+        parsedSessions = JSON.parse(sessionList);
+      } catch (e) {}
+    }
+    const sessionsArray = Array.isArray(parsedSessions)
+      ? parsedSessions
+      : parsedSessions?.data || [];
+
+    const existingSession = sessionsArray.find(
+      (session: any) => session.htp_test_id === report.id,
+    );
+
+    if (existingSession) {
+      const sessionId = existingSession.session_id || existingSession.id;
+      navigate(`/chat/report/${sessionId}`, {
+        state: { hasReport: true, reportId: report.id },
+        replace: true,
+      });
+    } else {
+      const targetRawReport = rawReports.find(
+        (r: any) => r.report_id === report.id,
+      );
+      const childId = targetRawReport?.child_id || 0;
+
+      handleStartNewChat({
+        child_id: childId,
+        htp_test_id: report.id,
+        title: `${report.name} 리포트 상담`,
+      });
+    }
+  };
+
   return (
     <div className="w-full bg-white font-sans relative min-h-screen flex flex-col items-center">
       <div className="w-full max-w-[402px] bg-white min-h-screen flex flex-col relative shadow-sm">
@@ -243,12 +489,15 @@ const ChatRoomPage = () => {
         </div>
 
         <main className="flex-1 flex flex-col items-center px-side pb-[140px] overflow-y-auto w-full">
-          {hasReport && (
+          {hasReport && currentReport && (
             <ReportSummaryCard
               name={currentReport.name}
               date={currentReport.date}
-              count={currentReport.count}
+              orderLabel={currentReport.orderLabel}
               onChangeClick={() => setIsBottomSheetOpen(true)}
+              onViewAllClick={() =>
+                navigate(`/test-result?reportId=${currentReport.id}`)
+              }
             />
           )}
 
@@ -262,7 +511,7 @@ const ChatRoomPage = () => {
                 />
 
                 <h2 className="mt-[16px] text-center text-e-title-3 text-black font-sans whitespace-pre-line">
-                  {hasReport
+                  {hasReport && currentReport
                     ? `${currentReport.name}의 \n${currentReport.date} 리포트를 함께 보고있어요.\n어떤 부분부터 이야기해볼까요?`
                     : `안녕하세요,\n육아 고민이나 궁금한 점을\n편하게 물어보세요`}
                 </h2>
@@ -362,11 +611,8 @@ const ChatRoomPage = () => {
         <ReportBottomSheet
           isOpen={isBottomSheetOpen}
           onClose={() => setIsBottomSheetOpen(false)}
-          reports={mockReportList}
-          onSelectReport={(report) => {
-            setCurrentReport(report);
-            setIsBottomSheetOpen(false);
-          }}
+          reports={reportList}
+          onSelectReport={handleSelectReport}
         />
       </div>
     </div>

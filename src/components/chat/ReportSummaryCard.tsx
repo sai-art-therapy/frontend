@@ -5,15 +5,17 @@ import chevronIcon from "../../assets/icons/common/chevron.svg";
 interface ReportSummaryCardProps {
   name: string;
   date: string;
-  count: number;
+  orderLabel: string;
   onChangeClick: () => void;
+  onViewAllClick?: () => void;
 }
 
 export const ReportSummaryCard: React.FC<ReportSummaryCardProps> = ({
   name,
   date,
-  count,
+  orderLabel,
   onChangeClick,
+  onViewAllClick,
 }) => {
   return (
     <div className="mt-[8px] flex w-[370px] max-w-full p-[12px] flex-col items-start gap-[12px] rounded-md bg-grey-50">
@@ -32,7 +34,7 @@ export const ReportSummaryCard: React.FC<ReportSummaryCardProps> = ({
             <div className="flex items-center text-footnote text-black">
               <span>{date}</span>
               <span className="mx-[2px]">・</span>
-              <span>{count}번째 검사</span>
+              <span>{orderLabel}</span>
             </div>
           </div>
         </div>
@@ -47,7 +49,10 @@ export const ReportSummaryCard: React.FC<ReportSummaryCardProps> = ({
 
       <div className="w-[346px] max-w-full h-[1px] bg-grey-200" />
 
-      <div className="flex w-full items-center justify-between cursor-pointer font-sans">
+      <div
+        className="flex w-full items-center justify-between cursor-pointer font-sans"
+        onClick={onViewAllClick}
+      >
         <span className="text-subheadline text-grey-700">
           검사 결과 전체보기
         </span>

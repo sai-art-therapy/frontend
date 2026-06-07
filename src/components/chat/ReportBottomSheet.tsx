@@ -1,9 +1,10 @@
 import React from "react";
 
 interface ReportItem {
+  id: number;
   name: string;
   date: string;
-  count: number;
+  orderLabel: string;
 }
 
 interface ReportBottomSheetProps {
@@ -32,14 +33,14 @@ export const ReportBottomSheet: React.FC<ReportBottomSheetProps> = ({
           대화할 리포트 변경
         </h3>
 
-        <div className="flex flex-col w-full gap-[24px]">
-          {reports.map((report, idx) => (
+        <div className="flex flex-col w-full gap-[24px] overflow-y-auto max-h-[300px]">
+          {reports.map((report) => (
             <button
-              key={idx}
+              key={report.id}
               onClick={() => onSelectReport(report)}
               className="w-full cursor-pointer text-left py-1 text-grey-900 text-body-1 font-sans hover:text-main-500 transition-colors"
             >
-              {report.name} ･ {report.date} ･ {report.count}번째 검사
+              {report.name} ･ {report.date} ･ {report.orderLabel}
             </button>
           ))}
         </div>

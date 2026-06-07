@@ -28,4 +28,4 @@ export type ChatSessionResponse = string;
 export type ChatSessionListResponse = ChatSession[];
 export type ChatHistoryResponse = string;
 export type ChatMessageResponse = string;
-export type SuggestedPromptsResponse = string;
+export type SuggestedPromptsResponse = string[];
