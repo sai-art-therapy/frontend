@@ -183,19 +183,103 @@ const ChatRoomPage = () => {
     },
   );
 
+  const parseArrayOrObjectHistory = (data: any) => {
+    let parsedData = data;
+    if (typeof parsedData === "string") {
+      try {
+        parsedData = JSON.parse(parsedData);
+      } catch (e) {}
+    }
+
+    let targetArray = [];
+    if (Array.isArray(parsedData)) {
+      targetArray = parsedData;
+    } else if (typeof parsedData === "object" && parsedData !== null) {
+      targetArray =
+        parsedData.messages ||
+        parsedData.history ||
+        parsedData.data ||
+        parsedData.chat_history ||
+        parsedData.items ||
+        Object.values(parsedData).find(Array.isArray) ||
+        [];
+    }
+
+    if (Array.isArray(targetArray) && targetArray.length > 0) {
+      const formattedMessages: Message[] = [];
+
+      targetArray.forEach((item: any, idx: number) => {
+        const hasUserContent =
+          item.user_message || item.question || item.prompt;
+        const hasAiContent =
+          item.assistant_message || item.answer || item.bot_message;
+
+        if (hasUserContent && hasAiContent && !item.role && !item.sender) {
+          formattedMessages.push({
+            id: String(item.id || item.message_id || idx) + "-user",
+            text:
+              typeof hasUserContent === "string"
+                ? hasUserContent
+                : hasUserContent.content || "",
+            sender: "user",
+          });
+          formattedMessages.push({
+            id: String(item.id || item.message_id || idx) + "-ai",
+            text:
+              typeof hasAiContent === "string"
+                ? hasAiContent
+                : hasAiContent.content || "",
+            sender: "ai",
+          });
+          return;
+        }
+
+        const isUser =
+          item.role === "user" || item.sender === "user" || !!item.user_message;
+
+        const textContent =
+          item.answer ||
+          item.content ||
+          item.message ||
+          item.text ||
+          item.user_message?.content ||
+          item.assistant_message?.content ||
+          (typeof item === "string" ? item : "");
+
+        if (textContent) {
+          formattedMessages.push({
+            id: String(item.message_id || item.id || idx),
+            text: textContent,
+            sender: isUser ? "user" : "ai",
+          });
+        }
+      });
+
+      setMessages(formattedMessages);
+    }
+  };
+
   useEffect(() => {
     if (!historyData) return;
 
     if (typeof historyData === "string") {
-      const trimmedData = historyData.trim();
+      let trimmedData = historyData.trim();
       if (!trimmedData) return;
+
+      if (trimmedData.startsWith('"') && trimmedData.endsWith('"')) {
+        try {
+          trimmedData = JSON.parse(trimmedData);
+        } catch (e) {}
+      }
 
       if (trimmedData.startsWith("[") || trimmedData.startsWith("{")) {
         try {
           const parsed = JSON.parse(trimmedData);
           parseArrayOrObjectHistory(parsed);
           return;
-        } catch (e) {}
+        } catch (e) {
+          console.error("채팅 내역 JSON 파싱 에러:", e);
+        }
       }
 
       if (trimmedData.includes("\n")) {
@@ -224,42 +308,6 @@ const ChatRoomPage = () => {
       parseArrayOrObjectHistory(historyData);
     }
   }, [historyData]);
-
-  const parseArrayOrObjectHistory = (data: any) => {
-    let targetArray = [];
-    if (Array.isArray(data)) {
-      targetArray = data;
-    } else if (typeof data === "object") {
-      targetArray = data.messages || data.history || data.data || [];
-    }
-
-    if (Array.isArray(targetArray)) {
-      const formattedMessages: Message[] = targetArray.map(
-        (item: any, idx: number) => {
-          const isUser =
-            item.role === "user" ||
-            item.sender === "user" ||
-            !!item.user_message;
-
-          const textContent =
-            item.answer ||
-            item.content ||
-            item.message ||
-            item.text ||
-            item.user_message?.content ||
-            item.assistant_message?.content ||
-            (typeof item === "string" ? item : "");
-
-          return {
-            id: String(item.message_id || item.id || idx),
-            text: textContent,
-            sender: isUser ? "user" : "ai",
-          };
-        },
-      );
-      setMessages(formattedMessages);
-    }
-  };
 
   const { mutate: handleSendMessageApi } = useAppMutation<any, any>(
     (variables: { text: string }) =>
