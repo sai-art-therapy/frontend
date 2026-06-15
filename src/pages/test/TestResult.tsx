@@ -796,17 +796,28 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           )}
         </div>
 
-        <div className="mt-[16px] flex w-full items-center gap-[10px] rounded-[12px] bg-warning-100 p-[12px]">
-          <div className="flex items-center gap-[8px]">
-            <img src={personIcon} alt="전문가" className="h-[24px] w-[24px]" />
-            <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-grey-900">
-              전문 상담 고려 안내
-            </span>
+        <div className="mt-[16px] flex w-[370px] items-center gap-[12px] rounded-[12px] bg-warning-100 p-[12px]">
+          <img
+            src={personIcon}
+            alt="전문가"
+            className="h-[24px] w-[24px] shrink-0"
+          />
+
+          <div className="flex flex-col gap-[4px] flex-1">
+            <h4
+              className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-grey-900"
+              style={{ fontFeatureSettings: "'liga' off, 'clig' off" }}
+            >
+              전문 상담 고려
+            </h4>
+            <p
+              className="text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-grey-900 whitespace-pre-wrap"
+              style={{ fontFeatureSettings: "'liga' off, 'clig' off" }}
+            >
+              결과가 걱정되시거나 아이에게 지속적인 변화가 보인다면, 아동 심리
+              전문가와 상담해 보시는 것을 권합니다.
+            </p>
           </div>
-          <p className="text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-grey-900">
-            결과 소견 내용이 염려되거나 일상 행동 패턴에 지속적인 주의 신호가
-            발견된다면 아동 발달 및 임상 심리 전문가와 내방 상담을 권장합니다.
-          </p>
         </div>
 
         {!isSharedView && (
