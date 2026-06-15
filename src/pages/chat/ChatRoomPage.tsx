@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -61,6 +61,8 @@ const ChatRoomPage = () => {
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isAiThinking, setIsAiThinking] = useState(false);
+
+  const hasAutoSent = useRef(false);
 
   const { data: rawReports = [] } = useAppQuery<any[]>(["reports"], getReports);
 
@@ -430,6 +432,22 @@ const ChatRoomPage = () => {
   const handleStopThinking = () => {
     setIsAiThinking(false);
   };
+
+  useEffect(() => {
+    const initialQuestion = location.state?.initialQuestion;
+
+    if (initialQuestion && !hasAutoSent.current && currentReport) {
+      hasAutoSent.current = true;
+      const timer = setTimeout(() => {
+        sendMessage(initialQuestion);
+        navigate(location.pathname, {
+          state: { ...location.state, initialQuestion: undefined },
+          replace: true,
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state, currentReport, numericSessionId]);
 
   const handleSelectReport = (report: CurrentReportType) => {
     setIsBottomSheetOpen(false);
