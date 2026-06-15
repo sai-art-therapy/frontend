@@ -17,6 +17,8 @@ const TestTimeInputStep = () => {
   const childId = location.state?.childId;
   const childName = location.state?.childName || "아이";
   const reportId = location.state?.reportId;
+  const imageFile = location.state?.imageFile;
+  const imageUrl = location.state?.imageUrl;
 
   const [minutes, setMinutes] = useState<string>("");
   const [seconds, setSeconds] = useState<string>("");
@@ -35,6 +37,8 @@ const TestTimeInputStep = () => {
             childId,
             childName,
             reportId,
+            imageFile,
+            imageUrl,
           },
           replace: true,
         });

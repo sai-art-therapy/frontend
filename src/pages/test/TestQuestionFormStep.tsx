@@ -21,6 +21,9 @@ const TestQuestionFormStep = () => {
   const testId = location.state?.testId;
   const childId = location.state?.childId;
   const childName = location.state?.childName || "아이";
+  const reportId = location.state?.reportId;
+  const imageFile = location.state?.imageFile;
+  const imageUrl = location.state?.imageUrl;
 
   const [answer, setAnswer] = useState<string>("");
   const [isDone, setIsDone] = useState<boolean>(false);
@@ -81,6 +84,9 @@ const TestQuestionFormStep = () => {
                 testId: Number(testId),
                 childId,
                 childName,
+                reportId,
+                imageFile,
+                imageUrl,
               },
             });
           } else {

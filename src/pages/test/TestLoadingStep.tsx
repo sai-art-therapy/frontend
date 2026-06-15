@@ -12,6 +12,8 @@ const TestLoadingStep = () => {
 
   const testId = location.state?.testId;
   const childId = location.state?.childId;
+  const imageFile = location.state?.imageFile;
+  const imageUrl = location.state?.imageUrl;
 
   const [progress, setProgress] = useState(0);
   const [childName, setChildName] = useState("아이");
@@ -35,6 +37,8 @@ const TestLoadingStep = () => {
               childId,
               childName,
               reportId,
+              imageFile,
+              imageUrl,
             },
           });
         }, 800);
