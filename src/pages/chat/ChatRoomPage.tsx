@@ -553,12 +553,11 @@ const ChatRoomPage = () => {
                     />
                   )}
                   <div
-                    className={`inline-flex p-[16px] justify-center items-center gap-[10px] text-subheadline font-[400] ${
+                    className={`p-[12px_16px] text-subheadline font-[400] max-w-[260px] break-words whitespace-pre-wrap ${
                       msg.sender === "user"
-                        ? "bg-main-100 text-black"
-                        : "bg-grey-100 text-grey-900"
+                        ? "bg-main-100 text-black rounded-[20px] rounded-tr-[4px]"
+                        : "bg-grey-100 text-grey-900 rounded-[20px] rounded-tl-[4px]"
                     }`}
-                    style={{ borderRadius: "1000px" }}
                   >
                     {msg.text}
                   </div>

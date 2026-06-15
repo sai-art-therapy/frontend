@@ -4,7 +4,6 @@ import { FloatingButton } from "../../components/common/FloatingButton";
 
 import lovelyIcon from "../../assets/icons/test/lovely.svg";
 import clipboardCloseIcon from "../../assets/icons/test/clipboard-close.svg";
-import calendarIcon from "../../assets/icons/home/calendar.svg";
 
 import { useAppQuery } from "../../hooks/apiHooks";
 import { getChildren } from "../../api/mypage";
@@ -89,10 +88,7 @@ const Test = () => {
 
         {reports && reports.length > 0 ? (
           <div className="mx-side mt-[16px] flex flex-col items-start justify-center rounded-md border border-grey-200 bg-white p-[4px_16px_4px_16px]">
-            <div className=" flex items-center">
-              
-              
-            </div>
+            <div className=" flex items-center"></div>
 
             <div className="mt-[4px] flex w-full flex-col">
               {reports.map((report, idx) => (
