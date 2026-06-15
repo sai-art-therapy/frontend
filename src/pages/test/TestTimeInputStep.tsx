@@ -74,7 +74,10 @@ const TestTimeInputStep = () => {
         <img
           src={returnIcon}
           alt="뒤로가기"
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (isPending) return;
+            navigate(-1);
+          }}
           className="h-[14px] w-[14px] cursor-pointer"
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
