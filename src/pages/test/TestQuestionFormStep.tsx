@@ -125,6 +125,7 @@ const TestQuestionFormStep = () => {
   };
 
   const handleBackFlow = () => {
+    if (isSubmitting) return;
     queryClient.removeQueries({ queryKey: ["currentPdiQuestion", testId] });
     navigate(-1);
   };
@@ -136,7 +137,7 @@ const TestQuestionFormStep = () => {
           src={returnIcon}
           alt="뒤로가기"
           onClick={handleBackFlow}
-          className="h-[14px] w-[14px] cursor-pointer"
+          className={`h-[14px] w-[14px] ${isSubmitting ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
       </div>

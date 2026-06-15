@@ -78,7 +78,7 @@ const TestTimeInputStep = () => {
             if (isPending) return;
             navigate(-1);
           }}
-          className="h-[14px] w-[14px] cursor-pointer"
+          className={`h-[14px] w-[14px] ${isPending ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
       </div>
