@@ -21,6 +21,9 @@ const TestQuestionFormStep = () => {
   const testId = location.state?.testId;
   const childId = location.state?.childId;
   const childName = location.state?.childName || "아이";
+  const reportId = location.state?.reportId;
+  const imageFile = location.state?.imageFile;
+  const imageUrl = location.state?.imageUrl;
 
   const [answer, setAnswer] = useState<string>("");
   const [isDone, setIsDone] = useState<boolean>(false);
@@ -81,6 +84,9 @@ const TestQuestionFormStep = () => {
                 testId: Number(testId),
                 childId,
                 childName,
+                reportId,
+                imageFile,
+                imageUrl,
               },
             });
           } else {
@@ -125,8 +131,16 @@ const TestQuestionFormStep = () => {
   };
 
   const handleBackFlow = () => {
-    queryClient.removeQueries({ queryKey: ["currentPdiQuestion", testId] });
-    navigate(-1);
+    if (isSubmitting) return;
+
+    const confirmExit = window.confirm(
+      "검사 도중 나가시면 이전 질문으로 다시 돌아올 수 없습니다.\n정말 검사 화면을 벗어나시겠습니까?",
+    );
+
+    if (confirmExit) {
+      queryClient.removeQueries({ queryKey: ["currentPdiQuestion", testId] });
+      navigate("/home", { replace: true });
+    }
   };
 
   return (
@@ -136,7 +150,7 @@ const TestQuestionFormStep = () => {
           src={returnIcon}
           alt="뒤로가기"
           onClick={handleBackFlow}
-          className="h-[14px] w-[14px] cursor-pointer"
+          className={`h-[14px] w-[14px] ${isSubmitting ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
       </div>

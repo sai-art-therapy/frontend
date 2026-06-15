@@ -2,6 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
+import { useAppMutation } from "../../hooks/apiHooks";
+import { createChatSession } from "../../apis/chat/chat";
+
 import chatSearchIcon from "../../assets/icons/home/chat-search.svg";
 import boyIcon from "../../assets/icons/test/boy.png";
 import chevronIcon from "../../assets/icons/common/chevron.svg";
@@ -33,12 +36,69 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  const { mutate: startChatWithQuestion, isPending } = useAppMutation<
+    any,
+    { child_id: number; htp_test_id: number; title: string; question: string }
+  >(
+    (body) =>
+      createChatSession({
+        child_id: body.child_id,
+        htp_test_id: body.htp_test_id,
+        title: body.title,
+      }),
+    {
+      onSuccess: (response, variables) => {
+        let parsedResponse = response;
+        if (typeof response === "string") {
+          try {
+            parsedResponse = JSON.parse(response);
+          } catch (e) {
+            parsedResponse = response;
+          }
+        }
+
+        const createdRoomId =
+          parsedResponse && typeof parsedResponse === "object"
+            ? parsedResponse.session_id || parsedResponse.id
+            : parsedResponse;
+
+        if (createdRoomId) {
+          navigate(`/chat/report/${createdRoomId}`, {
+            state: {
+              hasReport: true,
+              reportId: variables.htp_test_id,
+              initialQuestion: variables.question,
+            },
+          });
+        } else {
+          alert("채팅방 정보가 올바르지 않습니다.");
+        }
+      },
+      onError: (error) => {
+        console.error("추천 질문으로 채팅방 생성 실패:", error);
+        alert("채팅 시작 중 오류가 발생했습니다.");
+      },
+    },
+  );
+
   const handleChatNavigate = () => {
-    if (latestTest) {
-      navigate(`/chat/report/${latestTest.test_id}`);
-    } else {
+    navigate("/chat/intro-step");
+  };
+
+  const handleQuestionClick = (question: string) => {
+    if (isPending) return;
+
+    if (!child || !latestTest) {
       navigate("/chat/intro-step");
+      return;
     }
+
+    startChatWithQuestion({
+      child_id: child.child_id,
+      htp_test_id: latestTest.test_id,
+      title: `${child.name} 리포트 상담`,
+      question: question,
+    });
   };
 
   return (
@@ -94,23 +154,24 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({
 
       <div className="flex flex-col gap-[8px] w-full mb-side">
         {recommendedQuestions.map((question, idx) => (
-          <div
+          <button
             key={idx}
-            onClick={handleChatNavigate}
-            className="flex w-[338px] p-[12px_16px] justify-between items-center rounded-sm bg-grey-50 cursor-pointer hover:bg-grey-100 transition-colors"
+            disabled={isPending}
+            onClick={() => handleQuestionClick(question)}
+            className="flex w-[338px] p-[12px_16px] justify-between items-center rounded-sm bg-grey-50 cursor-pointer hover:bg-grey-100 transition-colors disabled:opacity-60"
           >
             <span
               className="text-grey-700 text-left text-e-subheadline"
               style={{ fontFeatureSettings: "'liga' off, 'clig' off" }}
             >
-              {question}
+              {isPending ? "연결 중..." : question}
             </span>
             <img
               src={chevronIcon}
               alt="이동"
               className="w-icon-sm h-icon-sm shrink-0"
             />
-          </div>
+          </button>
         ))}
       </div>
 

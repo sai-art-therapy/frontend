@@ -22,6 +22,8 @@ const TestQuestionIntroStep = () => {
   const childId = location.state?.childId;
   const childName = location.state?.childName || "아이";
   const reportId = location.state?.reportId;
+  const imageFile = location.state?.imageFile;
+  const imageUrl = location.state?.imageUrl;
 
   const [questions, setQuestions] = useState<PdiQuestion[]>([]);
 
@@ -36,8 +38,10 @@ const TestQuestionIntroStep = () => {
       },
       onError: (error) => {
         console.error("PDI 질문 생성 실패:", error);
-        alert("질문을 불러오는 중 오류가 발생했습니다. 다시 시도해 주세요.");
-        navigate(-1);
+        alert(
+          "진행할 수 없는 상태이거나 오류가 발생했습니다. 검사 목록으로 이동합니다.",
+        );
+        navigate("/test", { replace: true });
       },
     },
   );
@@ -49,7 +53,7 @@ const TestQuestionIntroStep = () => {
     onSuccess: () => {
       console.log("PDI 전체 건너뛰기 성공");
       navigate("/test-result", {
-        state: { testId, childId, childName, reportId },
+        state: { testId, childId, childName, reportId, imageFile, imageUrl },
       });
     },
     onError: (error) => {
@@ -76,8 +80,16 @@ const TestQuestionIntroStep = () => {
         <img
           src={returnIcon}
           alt="뒤로가기"
-          onClick={() => navigate(-1)}
-          className="h-[14px] w-[14px] cursor-pointer"
+          onClick={() => {
+            if (isPending || isSkipping) return;
+            const confirmExit = window.confirm(
+              "지금 나가시면 진행 중인 검사가 중단될 수 있습니다.\n정말 나가시겠습니까?",
+            );
+            if (confirmExit) {
+              navigate("/test", { replace: true });
+            }
+          }}
+          className={`h-[14px] w-[14px] ${isPending || isSkipping ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
       </div>
@@ -168,7 +180,15 @@ const TestQuestionIntroStep = () => {
             disabled={isPending || isSkipping || questions.length === 0}
             onClick={() =>
               navigate("/test-question-form-step", {
-                state: { testId, childId, childName, questions, reportId },
+                state: {
+                  testId,
+                  childId,
+                  childName,
+                  questions,
+                  reportId,
+                  imageFile,
+                  imageUrl,
+                },
               })
             }
           >

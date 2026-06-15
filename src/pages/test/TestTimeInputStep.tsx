@@ -17,6 +17,8 @@ const TestTimeInputStep = () => {
   const childId = location.state?.childId;
   const childName = location.state?.childName || "아이";
   const reportId = location.state?.reportId;
+  const imageFile = location.state?.imageFile;
+  const imageUrl = location.state?.imageUrl;
 
   const [minutes, setMinutes] = useState<string>("");
   const [seconds, setSeconds] = useState<string>("");
@@ -35,7 +37,10 @@ const TestTimeInputStep = () => {
             childId,
             childName,
             reportId,
+            imageFile,
+            imageUrl,
           },
+          replace: true,
         });
       },
       onError: (error) => {
@@ -74,8 +79,11 @@ const TestTimeInputStep = () => {
         <img
           src={returnIcon}
           alt="뒤로가기"
-          onClick={() => navigate(-1)}
-          className="h-[14px] w-[14px] cursor-pointer"
+          onClick={() => {
+            if (isPending) return;
+            navigate(-1);
+          }}
+          className={`h-[14px] w-[14px] ${isPending ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
       </div>

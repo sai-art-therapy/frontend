@@ -13,7 +13,7 @@ const ReportItem: React.FC<ReportItemProps> = ({ report }) => {
 
   return (
     <div
-      onClick={() => navigate(`/chat/report/${report.test_id}`)}
+      onClick={() => navigate(`/test-result?reportId=${report.test_id}`)}
       className="flex w-[338px] py-[12px] justify-between items-center bg-white cursor-pointer hover:opacity-80 transition-opacity"
     >
       <div className="flex items-center gap-[8px]">
@@ -26,7 +26,9 @@ const ReportItem: React.FC<ReportItemProps> = ({ report }) => {
         </div>
 
         <div className="flex flex-col">
-          <span className="text-black text-e-subheadline">{report.child_name}</span>
+          <span className="text-black text-e-subheadline">
+            {report.child_name}
+          </span>
           <div className="flex items-center mt-[2px] text-grey-700 text-footnote">
             <span>{report.test_date_label}</span>
             <span className="mx-[2px]">・</span>

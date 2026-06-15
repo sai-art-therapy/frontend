@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -61,6 +61,8 @@ const ChatRoomPage = () => {
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isAiThinking, setIsAiThinking] = useState(false);
+
+  const hasAutoSent = useRef(false);
 
   const { data: rawReports = [] } = useAppQuery<any[]>(["reports"], getReports);
 
@@ -431,6 +433,22 @@ const ChatRoomPage = () => {
     setIsAiThinking(false);
   };
 
+  useEffect(() => {
+    const initialQuestion = location.state?.initialQuestion;
+
+    if (initialQuestion && !hasAutoSent.current && currentReport) {
+      hasAutoSent.current = true;
+      const timer = setTimeout(() => {
+        sendMessage(initialQuestion);
+        navigate(location.pathname, {
+          state: { ...location.state, initialQuestion: undefined },
+          replace: true,
+        });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state, currentReport, numericSessionId]);
+
   const handleSelectReport = (report: CurrentReportType) => {
     setIsBottomSheetOpen(false);
 
@@ -553,12 +571,11 @@ const ChatRoomPage = () => {
                     />
                   )}
                   <div
-                    className={`inline-flex p-[16px] justify-center items-center gap-[10px] text-subheadline font-[400] ${
+                    className={`p-[12px_16px] text-subheadline font-[400] max-w-[260px] break-words whitespace-pre-wrap ${
                       msg.sender === "user"
-                        ? "bg-main-100 text-black"
-                        : "bg-grey-100 text-grey-900"
+                        ? "bg-main-100 text-black rounded-[20px] rounded-tr-[4px]"
+                        : "bg-grey-100 text-grey-900 rounded-[20px] rounded-tl-[4px]"
                     }`}
-                    style={{ borderRadius: "1000px" }}
                   >
                     {msg.text}
                   </div>

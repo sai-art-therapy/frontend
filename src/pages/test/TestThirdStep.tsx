@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
@@ -24,129 +24,113 @@ const TestThirdStep = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const albumInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        console.log("📹 컴포넌트 언마운트로 인한 카메라 스트림 해제 완료");
-      }
-    };
-  }, []);
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDimension = 1000;
 
-  const saveImageToSessionAsBase64 = (file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === "string") {
-        sessionStorage.setItem("user_uploaded_image", reader.result);
-        console.log(
-          "💾 새로고침에도 대응 가능한 Base64 이미지가 세션에 백업되었습니다.",
-        );
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const { mutate: uploadImage, isPending } = useAppMutation<string, any>(
-    ({ testId, file }: { testId: number; file: File }) =>
-      uploadTestImage(testId, file),
-    {
-      onSuccess: (data) => {
-        console.log("그림 이미지 업로드 성공:", data);
-        const uploadedImageUrl = typeof data === "string" ? data : previewUrl;
-
-        if (selectedFile) {
-          saveImageToSessionAsBase64(selectedFile);
-        }
-
-        navigate("/test-loading-step", {
-          state: {
-            childId,
-            testId: Number(testId),
-            imageUrl: uploadedImageUrl,
-          },
-        });
-      },
-      onError: (error) => {
-        console.error("그림 이미지 업로드 실패:", error);
-        alert("이미지 업로드 중 오류가 발생했습니다. 다시 시도해 주세요.");
-      },
-    },
-  );
-
-  const startCamera = async () => {
-    try {
-      const constraints = {
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setIsCameraActive(true);
-    } catch (err) {
-      console.error("카메라 권한을 획득할 수 없습니다:", err);
-      alert(
-        "카메라를 시작할 수 없습니다. 장치 연결이나 브라우저 권한 설정을 확인해 주세요.",
-      );
-      setSelectedOption(null);
-    }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    setIsCameraActive(false);
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current) {
-      const video = videoRef.current;
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const context = canvas.getContext("2d");
-      if (context) {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const file = new File(
-                [blob],
-                `captured_image_${Date.now()}.jpg`,
-                {
-                  type: "image/jpeg",
-                },
-              );
-
-              if (previewUrl) URL.revokeObjectURL(previewUrl);
-
-              setSelectedFile(file);
-              setPreviewUrl(URL.createObjectURL(file));
-              stopCamera();
+          if (width > height) {
+            if (width > maxDimension) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
             }
-          },
-          "image/jpeg",
-          0.9,
-        );
-      }
-    }
+          } else {
+            if (height > maxDimension) {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(file);
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                resolve(file);
+                return;
+              }
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            "image/jpeg",
+            0.7,
+          );
+        };
+      };
+    });
   };
+
+  const saveImageToSessionAsBase64 = (file: File): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          try {
+            sessionStorage.setItem("user_uploaded_image", reader.result);
+          } catch (err) {
+            console.warn("⚠️ sessionStorage 저장 실패 (용량 초과 가능):", err);
+          }
+        }
+        resolve();
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const { mutate: uploadImage, isPending } = useAppMutation<
+    string,
+    { testId: number; file: File }
+  >(({ testId, file }) => uploadTestImage(testId, file), {
+    onSuccess: async (data, variables) => {
+      const targetFile = variables.file;
+      const uploadedImageUrl = typeof data === "string" ? data : previewUrl;
+
+      try {
+        await saveImageToSessionAsBase64(targetFile);
+      } catch (err) {
+        console.warn("⚠️ 이미지 세션 저장 실패:", err);
+      }
+
+      navigate("/test-loading-step", {
+        state: {
+          childId,
+          testId: Number(testId),
+          imageUrl: uploadedImageUrl,
+          imageFile: targetFile,
+        },
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        JSON.stringify(error);
+      alert(`🚨 에러 상세 원인: ${errorMessage}`);
+    },
+  });
 
   const handleOptionClick = (option: "camera" | "album") => {
     setSelectedOption(option);
@@ -157,10 +141,9 @@ const TestThirdStep = () => {
       setSelectedFile(null);
     }
 
-    if (option === "camera") {
-      startCamera();
+    if (option === "camera" && cameraInputRef.current) {
+      cameraInputRef.current.click();
     } else if (option === "album" && albumInputRef.current) {
-      stopCamera();
       albumInputRef.current.click();
     }
   };
@@ -179,7 +162,7 @@ const TestThirdStep = () => {
     }
   };
 
-  const handleUploadSubmit = () => {
+  const handleUploadSubmit = async () => {
     if (!testId) {
       alert("검사 정보가 누락되었습니다. 첫 페이지부터 다시 진행해 주세요.");
       navigate("/test");
@@ -189,53 +172,26 @@ const TestThirdStep = () => {
       alert("업로드할 그림 사진이 없습니다.");
       return;
     }
-    uploadImage({ testId: Number(testId), file: selectedFile });
+
+    try {
+      const targetFile =
+        selectedFile.size > 1024 * 1024
+          ? await compressImage(selectedFile)
+          : selectedFile;
+
+      uploadImage({ testId: Number(testId), file: targetFile });
+    } catch (error) {
+      alert("이미지 처리 중 오류가 발생했습니다.");
+    }
   };
 
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen relative">
-      {isCameraActive && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black max-w-[402px] left-1/2 -translate-x-1/2 w-full h-full">
-          <div className="flex justify-between items-center px-side py-4 text-white">
-            <span className="text-e-title-3">그림 촬영하기</span>
-            <button
-              onClick={() => {
-                stopCamera();
-                setSelectedOption(null);
-              }}
-              className="text-body-1 font-semibold text-grey-400"
-            >
-              취소
-            </button>
-          </div>
-
-          <div className="flex-1 flex items-center justify-center overflow-hidden bg-zinc-900">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full h-auto max-h-[70vh] object-cover"
-            />
-          </div>
-
-          <div className="h-[120px] flex items-center justify-center bg-black">
-            <button
-              onClick={capturePhoto}
-              className="w-[72px] h-[72px] rounded-full border-[6px] border-white bg-main-500 hover:bg-main-600 transition-colors active:scale-95"
-              title="촬영하기"
-            />
-          </div>
-        </div>
-      )}
-
       <div className="flex h-[68px] w-full items-center justify-start gap-[16px] px-side py-[20px]">
         <img
           src={returnIcon}
           alt="뒤로가기"
-          onClick={() => {
-            stopCamera();
-            navigate(-1);
-          }}
+          onClick={() => navigate(-1)}
           className="h-[14px] w-[14px] cursor-pointer"
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
@@ -267,6 +223,14 @@ const TestThirdStep = () => {
           type="file"
           ref={albumInputRef}
           accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        <input
+          type="file"
+          ref={cameraInputRef}
+          accept="image/*"
+          capture="environment"
           onChange={handleFileChange}
           className="hidden"
         />

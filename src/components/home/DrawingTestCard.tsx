@@ -9,6 +9,7 @@ interface DrawingTestCardProps {
   title: string;
   subtitle: string;
   buttonText: string;
+  childId?: number | null;
 }
 
 const DrawingTestCard: React.FC<DrawingTestCardProps> = ({
@@ -16,8 +17,22 @@ const DrawingTestCard: React.FC<DrawingTestCardProps> = ({
   title,
   subtitle,
   buttonText,
+  childId,
 }) => {
   const navigate = useNavigate();
+
+  const handleStartClick = () => {
+    if (!childId) {
+      alert(
+        "등록된 자녀 정보가 없습니다. 마이페이지에서 자녀를 먼저 등록해 주세요.",
+      );
+      return;
+    }
+
+    navigate("/test-start", {
+      state: { childId: childId },
+    });
+  };
 
   return (
     <div className="flex w-[370px] p-side flex-col justify-center items-start rounded-md bg-white mb-side">
@@ -51,7 +66,7 @@ const DrawingTestCard: React.FC<DrawingTestCardProps> = ({
           size="md"
           showIcon={false}
           className="w-full bg-main-100 rounded-sm"
-          onClick={() => navigate("/test-start")}
+          onClick={handleStartClick}
         >
           <span className="text-main-500 text-e-subheadline">{buttonText}</span>
         </ActionButton>
