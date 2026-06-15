@@ -3,33 +3,38 @@ import DrawingTestCard from "../../components/home/DrawingTestCard";
 import ChatbotCard from "../../components/home/ChatbotCard";
 import RecentReportsCard from "../../components/home/RecentReportsCard";
 import { getHome } from "../../api/home";
+import { getChildren } from "../../api/mypage";
 import type { HomeResponse } from "../../api/home";
 
 const HomePage: React.FC = () => {
   const [data, setData] = useState<HomeResponse | null>(null);
+  const [childId, setChildId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 딱 한 번만 호출되도록 보장하는 락
   const isFetched = useRef(false);
 
   useEffect(() => {
     if (isFetched.current) return;
     isFetched.current = true;
 
-    getHome()
-      .then((res) => {
-        setData(res);
+    Promise.all([getHome(), getChildren()])
+      .then(([homeRes, childrenRes]) => {
+        setData(homeRes);
+
+        if (childrenRes && childrenRes.length > 0) {
+          setChildId(childrenRes[0].child_id);
+        }
+
         setLoading(false);
       })
       .catch((err) => {
-        console.error("홈 데이터 호출 실패:", err);
-        setError("홈 데이터를 불러오지 못했습니다. 서버 주소를 확인해 주세요.");
+        console.error("홈/자녀 데이터 호출 실패:", err);
+        setError("데이터를 불러오지 못했습니다. 서버 주소를 확인해 주세요.");
         setLoading(false);
       });
   }, []);
 
-  // 에러나 로딩 시 전체 DOM 레이아웃 구조를 유지하여 부모 컴포넌트의 리마운트(무한루프) 방지
   if (loading || error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-grey-50">
@@ -65,6 +70,7 @@ const HomePage: React.FC = () => {
             title={data.test_card.title}
             subtitle={data.test_card.subtitle}
             buttonText={data.test_card.button_text}
+            childId={childId}
           />
 
           <ChatbotCard
