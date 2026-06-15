@@ -36,8 +36,10 @@ const TestQuestionIntroStep = () => {
       },
       onError: (error) => {
         console.error("PDI 질문 생성 실패:", error);
-        alert("질문을 불러오는 중 오류가 발생했습니다. 다시 시도해 주세요.");
-        navigate(-1);
+        alert(
+          "진행할 수 없는 상태이거나 오류가 발생했습니다. 검사 목록으로 이동합니다.",
+        );
+        navigate("/test", { replace: true });
       },
     },
   );
@@ -78,7 +80,12 @@ const TestQuestionIntroStep = () => {
           alt="뒤로가기"
           onClick={() => {
             if (isPending || isSkipping) return;
-            navigate(-1);
+            const confirmExit = window.confirm(
+              "지금 나가시면 진행 중인 검사가 중단될 수 있습니다.\n정말 나가시겠습니까?",
+            );
+            if (confirmExit) {
+              navigate("/test", { replace: true });
+            }
           }}
           className={`h-[14px] w-[14px] ${isPending || isSkipping ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         />

@@ -126,8 +126,15 @@ const TestQuestionFormStep = () => {
 
   const handleBackFlow = () => {
     if (isSubmitting) return;
-    queryClient.removeQueries({ queryKey: ["currentPdiQuestion", testId] });
-    navigate(-1);
+
+    const confirmExit = window.confirm(
+      "검사 도중 나가시면 이전 질문으로 다시 돌아올 수 없습니다.\n정말 검사 화면을 벗어나시겠습니까?",
+    );
+
+    if (confirmExit) {
+      queryClient.removeQueries({ queryKey: ["currentPdiQuestion", testId] });
+      navigate("/home", { replace: true });
+    }
   };
 
   return (

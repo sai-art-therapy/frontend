@@ -36,6 +36,7 @@ const TestTimeInputStep = () => {
             childName,
             reportId,
           },
+          replace: true,
         });
       },
       onError: (error) => {

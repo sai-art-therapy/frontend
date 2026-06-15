@@ -518,8 +518,11 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
           <img
             src={returnIcon}
             alt="뒤로가기"
-            onClick={() => navigate(-1)}
-            className="h-[14px] w-[14px] cursor-pointer"
+            onClick={() => {
+              if (isPdfDownloading) return;
+              navigate(-1);
+            }}
+            className={`h-[14px] w-[14px] ${isPdfDownloading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
           />
         )}
         <h1 className="text-e-title-3 text-grey-900">검사 결과</h1>
