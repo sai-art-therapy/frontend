@@ -3,19 +3,23 @@ import { useNavigate } from "react-router-dom";
 import { TopBar } from "../../components/common/TopBar";
 import { DrawingToolbar } from "../../components/draw/DrawingToolbar";
 import type { ToolType } from "../../components/draw/DrawingToolbar";
+import { ColorPicker, PALETTE_COLORS } from "../../components/draw/ColorPicker";
 
 export const DrawPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTool, setActiveTool] = useState<ToolType>("pen");
+  const [selectedColor, setSelectedColor] = useState<string>(PALETTE_COLORS[0]);
 
   const handleBack = () => {
     navigate(-1);
   };
 
   const handleComplete = () => {
+    // TODO: 저장 로직
   };
 
   const handleUndo = () => {
+    // TODO: 되돌리기 로직
   };
 
   return (
@@ -34,8 +38,14 @@ export const DrawPage: React.FC = () => {
         onUndo={handleUndo}
       />
 
-      <div className="flex-1 w-full relative touch-none">
+      <div className="mt-[15px]">
+        <ColorPicker
+          selectedColor={selectedColor}
+          onSelectColor={setSelectedColor}
+        />
       </div>
+
+      <div className="flex-1 w-full relative touch-none"></div>
     </div>
   );
 };

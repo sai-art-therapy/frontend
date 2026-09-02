@@ -17,11 +17,11 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   onUndo,
 }) => {
   return (
-    <div className="flex items-center justify-end px-[16px] py-[8px]">
+    <div className="flex items-center justify-end px-[16px] py-[8px] pr-[20px]">
       {/* 되돌리기 버튼 */}
       <button
         onClick={onUndo}
-        className="flex w-[52px] h-[52px] p-[14px] justify-center items-center aspect-square rounded-[1000px] bg-grey-50 active:bg-grey-100 transition-colors"
+        className="flex w-[52px] h-[52px] p-[14px] justify-center items-center aspect-square rounded-[1000px] bg-grey-50 active:bg-grey-100 transition-colors cursor-pointer"
         aria-label="되돌리기"
       >
         <span
@@ -43,7 +43,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         {/* 지우개 버튼 */}
         <button
           onClick={() => onSelectTool("eraser")}
-          className={`flex w-[40px] h-[40px] p-[8px] justify-center items-center aspect-square rounded-[1000px] transition-colors ${
+          className={`flex w-[40px] h-[40px] p-[8px] justify-center items-center aspect-square rounded-[1000px] transition-colors cursor-pointer ${
             activeTool === "eraser"
               ? "bg-main-100 text-main-500"
               : "bg-grey-50 text-grey-600"
@@ -70,7 +70,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         {/* 그리기 버튼 */}
         <button
           onClick={() => onSelectTool("pen")}
-          className={`flex w-[40px] h-[40px] p-[8px] justify-center items-center aspect-square rounded-[1000px] transition-colors ${
+          className={`flex w-[40px] h-[40px] p-[8px] justify-center items-center aspect-square rounded-[1000px] transition-colors cursor-pointer ${
             activeTool === "pen"
               ? "bg-main-100 text-main-500"
               : "bg-grey-50 text-grey-600"
