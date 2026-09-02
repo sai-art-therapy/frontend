@@ -29,6 +29,9 @@ import PreparationPage from "../pages/MyPage/PreparationPage";
 import HomePage from "../pages/home/HomePage";
 
 const RootIndex = () => {
+  if (import.meta.env.VITE_DEV_BYPASS_AUTH === "true") {
+    return <Navigate to="/home" replace />;
+  }
   const token = localStorage.getItem("access_token");
   return token ? (
     <Navigate to="/home" replace />

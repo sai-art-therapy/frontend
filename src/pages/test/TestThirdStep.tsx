@@ -3,12 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
 import returnIcon from "../../assets/icons/common/return.svg";
-import uploadpictureIcon from "../../assets/icons/test/uploadpicture.svg";
+import frameIcon from "../../assets/icons/test/frame.svg";
+import drawIcon from "../../assets/icons/test/draw.svg";
 import cameraIcon from "../../assets/icons/test/camera.svg";
 import albumIcon from "../../assets/icons/test/album.svg";
 import plusbeforexIcon from "../../assets/icons/test/plusbeforex.svg";
 import xafterplusIcon from "../../assets/icons/test/xafterplus.svg";
-import referIcon from "../../assets/icons/test/refer.svg";
 
 import { useAppMutation } from "../../hooks/apiHooks";
 import { uploadTestImage } from "../../apis/test/test";
@@ -205,17 +205,17 @@ const TestThirdStep = () => {
         </div>
 
         <img
-          src={uploadpictureIcon}
+          src={frameIcon}
           alt="그림 업로드"
           className="mt-[35px] h-[48px] w-[48px]"
         />
 
-        <div className="mt-[8px] flex flex-col">
+        <div className="mt-[8px] flex flex-col gap-[4px]">
           <h2 className="text-e-title-1 text-grey-900">
-            그림을 업로드해 주세요
+            그림을 그려주세요
           </h2>
-          <p className="mt-[4px] text-body-1 text-grey-600 whitespace-pre-line">
-            집, 나무, 사람이 함께 있는 그림을{"\n"}한 장의 사진으로 올려주세요
+          <p className="text-body-1 text-grey-600">
+            집, 나무, 사람이 함께 있는 그림을 그려주세요
           </p>
         </div>
 
@@ -236,9 +236,28 @@ const TestThirdStep = () => {
         />
 
         <div className="mt-[40px] flex w-full flex-col gap-[16px]">
+          {/* 앱에서 그림 그리기 (라우트 미연결) */}
+          <div className="flex w-full cursor-pointer items-center justify-between rounded-[12px] border border-grey-200 bg-white p-[16px]">
+            <div className="flex items-center gap-[16px]">
+              <div className="flex items-center justify-center rounded-[8px] bg-grey-50 p-[16px]">
+                <img src={drawIcon} alt="그림 그리기" className="h-[24px] w-[24px]" />
+              </div>
+              <span className="text-e-title-3 text-grey-800">앱에서 그림 그리기</span>
+            </div>
+            <img src={plusbeforexIcon} alt="선택" className="h-[14px] w-[14px] shrink-0" />
+          </div>
+
+          {/* OR 구분선 */}
+          <div className="flex items-center gap-[16px]">
+            <div className="h-px flex-1 bg-grey-200"></div>
+            <span className="text-footnote text-grey-500">OR</span>
+            <div className="h-px flex-1 bg-grey-200"></div>
+          </div>
+
+          {/* 사진 촬영 */}
           <div
             onClick={() => handleOptionClick("camera")}
-            className={`flex w-full cursor-pointer items-center justify-between rounded-md border p-[16px] transition-colors duration-200 ${
+            className={`flex w-full cursor-pointer items-center justify-between rounded-[12px] border p-[16px] transition-colors duration-200 ${
               selectedOption === "camera"
                 ? "border-[#FFA98A] bg-white"
                 : "border-grey-200 bg-white"
@@ -246,15 +265,13 @@ const TestThirdStep = () => {
           >
             <div className="flex items-center gap-[16px]">
               <div
-                className={`flex items-center justify-center gap-[10px] rounded-sm p-[16px] transition-colors duration-200 ${
+                className={`flex items-center justify-center rounded-[8px] p-[16px] transition-colors duration-200 ${
                   selectedOption === "camera" ? "bg-[#FFF0EB]" : "bg-grey-50"
                 }`}
               >
                 <div
                   className={`h-[24px] w-[24px] transition-colors duration-200 ${
-                    selectedOption === "camera"
-                      ? "bg-[#FF6229]"
-                      : "bg-[#8B97A7]"
+                    selectedOption === "camera" ? "bg-[#FF6229]" : "bg-[#8B97A7]"
                   }`}
                   style={{
                     WebkitMaskImage: `url("${cameraIcon}")`,
@@ -268,22 +285,19 @@ const TestThirdStep = () => {
                   }}
                 />
               </div>
-              <span className="text-e-title-3 text-grey-800 line-clamp-1">
-                사진 촬영
-              </span>
+              <span className="text-e-title-3 text-grey-800">사진 촬영</span>
             </div>
             <img
-              src={
-                selectedOption === "camera" ? xafterplusIcon : plusbeforexIcon
-              }
+              src={selectedOption === "camera" ? xafterplusIcon : plusbeforexIcon}
               alt="선택"
               className="h-[14px] w-[14px] shrink-0"
             />
           </div>
 
+          {/* 앨범에서 선택 */}
           <div
             onClick={() => handleOptionClick("album")}
-            className={`flex w-full cursor-pointer items-center justify-between rounded-md border p-[16px] transition-colors duration-200 ${
+            className={`flex w-full cursor-pointer items-center justify-between rounded-[12px] border p-[16px] transition-colors duration-200 ${
               selectedOption === "album"
                 ? "border-[#FFA98A] bg-white"
                 : "border-grey-200 bg-white"
@@ -291,7 +305,7 @@ const TestThirdStep = () => {
           >
             <div className="flex items-center gap-[16px]">
               <div
-                className={`flex items-center justify-center gap-[10px] rounded-sm p-[16px] transition-colors duration-200 ${
+                className={`flex items-center justify-center rounded-[8px] p-[16px] transition-colors duration-200 ${
                   selectedOption === "album" ? "bg-[#FFF0EB]" : "bg-grey-50"
                 }`}
               >
@@ -311,14 +325,10 @@ const TestThirdStep = () => {
                   }}
                 />
               </div>
-              <span className="text-e-title-3 text-grey-800 line-clamp-1">
-                앨범에서 선택
-              </span>
+              <span className="text-e-title-3 text-grey-800">앨범에서 선택</span>
             </div>
             <img
-              src={
-                selectedOption === "album" ? xafterplusIcon : plusbeforexIcon
-              }
+              src={selectedOption === "album" ? xafterplusIcon : plusbeforexIcon}
               alt="선택"
               className="h-[14px] w-[14px] shrink-0"
             />
@@ -326,7 +336,7 @@ const TestThirdStep = () => {
         </div>
 
         {previewUrl && (
-          <div className="mt-[20px] flex flex-col items-center gap-[8px] rounded-md border border-grey-100 bg-grey-50 p-[12px]">
+          <div className="mt-[20px] flex flex-col items-center gap-[8px] rounded-[12px] border border-grey-100 bg-grey-50 p-[12px]">
             <span className="text-caption-1 font-semibold text-grey-700">
               등록 예정 파일 미리보기
             </span>
@@ -340,31 +350,18 @@ const TestThirdStep = () => {
             </span>
           </div>
         )}
-
-        <div className="mt-[32px] mb-[32px] flex w-full items-center gap-[8px] rounded-sm bg-warning-100 p-[8px]">
-          <img
-            src={referIcon}
-            alt="참고"
-            className="h-[24px] w-[24px] shrink-0"
-          />
-          <p className="text-footnote text-grey-900">
-            밝은 곳에서 그림 전체가 잘 보이도록 정면에서 촬영해 주세요
-          </p>
-        </div>
       </main>
 
       <div className="fixed bottom-0 left-1/2 w-full max-w-[402px] -translate-x-1/2 bg-white px-side pb-[32px] pt-[16px]">
-        <div className="flex w-full items-center gap-[16px]">
-          <ActionButton
-            variant="darkGrey"
-            disabled={!selectedFile || isPending}
-            className="w-full"
-            showIcon={false}
-            onClick={handleUploadSubmit}
-          >
-            {isPending ? "이미지 분석 요청 중..." : "분석 시작하기"}
-          </ActionButton>
-        </div>
+        <ActionButton
+          variant="darkGrey"
+          disabled={!selectedFile || isPending}
+          className="w-full"
+          showIcon={false}
+          onClick={handleUploadSubmit}
+        >
+          {isPending ? "이미지 분석 요청 중..." : "분석 시작하기"}
+        </ActionButton>
       </div>
     </div>
   );

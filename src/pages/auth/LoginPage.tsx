@@ -1,41 +1,31 @@
-import gdamLogo from "../../assets/icons/auth/gdam-logo.svg";
-import gdamText from "../../assets/icons/auth/GDAM.svg";
+import gdamOnboarding from "../../assets/icons/auth/gdam-onboarding.png";
 import googleLogo from "../../assets/icons/auth/google-logo.svg";
 
 export default function LoginPage() {
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`;
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-white px-[16px]">
-      <div className="flex w-full max-w-[370px] flex-col items-center gap-[80px]">
-        {/* Logo + Text */}
-        <div className="flex flex-col items-center gap-[16px] w-full">
-          <div className="flex flex-col items-center gap-2">
-            <img
-              src={gdamLogo}
-              alt="GDAM 로고"
-              className="size-[200px]"
-            />
-            <img src={gdamText} alt="GDAM" />
-          </div>
+    <div className="relative h-screen w-full overflow-hidden bg-white">
+      {/* 상단 타이틀 (절대 위치) */}
+      <div className="absolute left-[32px] top-[96px] flex w-[291px] flex-col gap-[8px]">
+        <p className="text-[28px] font-bold leading-[41px] tracking-[0.37px] text-black whitespace-pre-wrap">
+          {`AI가 분석하는 \n우리 아이만의 심리 리포트`}
+        </p>
+        <p className="font-['Albert_Sans'] text-[50px] font-bold leading-normal text-black">
+          GDAM
+        </p>
+      </div>
 
-          <div className="flex flex-col items-center gap-[8px] text-center w-full">
-            <p className="text-[28px] font-bold leading-[34px] tracking-[0.37px] text-black">
-              그림으로 만나는
-              <br />
-              우리 아이 마음
-            </p>
-            <p className="text-[17px] font-normal leading-[22px] tracking-[-0.41px] text-grey-700">
-              집, 나무, 사람 한 장으로
-              <br />
-              AI가 분석하는 우리 아이만의 심리 리포트
-            </p>
-          </div>
-        </div>
+      {/* 온보딩 이미지 + 버튼 (중앙 하단) */}
+      <div className="absolute left-1/2 top-[calc(58.33%+28px)] flex w-[370px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[40px]">
+        <img
+          src={gdamOnboarding}
+          alt="GDAM 온보딩"
+          className="h-[336px] w-[370px] object-cover"
+        />
 
-        {/* Google Login Button */}
         <button
           onClick={handleGoogleLogin}
           className="flex h-[52px] w-full items-center overflow-hidden rounded-[10px] bg-grey-50 px-[56px] transition-colors active:bg-grey-100"

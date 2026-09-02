@@ -3,8 +3,6 @@ import { ActionButton } from "../../components/common/ActionButton";
 
 import returnIcon from "../../assets/icons/common/return.svg";
 import treeIcon from "../../assets/icons/test/tree.svg";
-import fileIcon from "../../assets/icons/test/file.svg";
-import penIcon from "../../assets/icons/test/pen.svg";
 import greenCheckIcon from "../../assets/icons/test/greencheck.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
 import timeIcon from "../../assets/icons/test/time.svg";
@@ -44,12 +42,8 @@ const TestSecondStep = () => {
       desc: "그릴 대상만 알려주고 자유롭게 두세요",
     },
     {
-      title: "배치, 크기, 순서는 자유롭게",
+      title: '"배치, 크기, 순서는 자유롭게 그려도 돼"',
       desc: "아이가 그리고 싶은 대로 두는 게 가장 좋아요",
-    },
-    {
-      title: "시간 제한은 없어요",
-      desc: "충분히 시간을 두고 천천히 그릴 수 있게 해주세요",
     },
   ];
 
@@ -96,7 +90,7 @@ const TestSecondStep = () => {
             아이와 함께 그림을 준비해요
           </h2>
           <p className="mt-[4px] text-body-1 text-grey-600">
-            한 장의 종이에 집, 나무, 사람을 모두 그려주세요
+            한 장의 종이에 집, 나무, 사람을 모두 그리면 돼요
           </p>
         </div>
 
@@ -117,36 +111,18 @@ const TestSecondStep = () => {
         </div>
 
         <h3 className="mt-[24px] text-e-body-1 text-black">
-          아이에게 제공해 주세요
-        </h3>
-        <div className="mt-[16px] flex w-full gap-[12px]">
-          <div className="flex flex-1 items-center justify-center gap-[8px] rounded-sm border border-grey-200 bg-white py-[12px]">
-            <img src={fileIcon} alt="종이" className="h-[19px] w-[15px]" />
-            <span className="text-e-subheadline text-grey-900">
-              A4 용지 1장
-            </span>
-          </div>
-          <div className="flex flex-1 items-center justify-center gap-[8px] rounded-sm border border-grey-200 bg-white py-[12px]">
-            <img src={penIcon} alt="연필" className="h-[19px] w-[19px]" />
-            <span className="text-e-subheadline text-grey-900">
-              연필 또는 색연필
-            </span>
-          </div>
-        </div>
-
-        <h3 className="mt-[24px] text-e-body-1 text-black">
           아이에게 이렇게 알려주세요
         </h3>
         <div className="mt-[16px] flex flex-col gap-[8px]">
           {guideSteps.map((step, index) => (
             <div
               key={index}
-              className="flex items-center gap-[16px] rounded-md bg-grey-50 p-[12px]"
+              className="flex items-center gap-[16px] rounded-[12px] bg-grey-50 p-[12px]"
             >
               <img
                 src={greenCheckIcon}
                 alt="체크"
-                className="h-spacing-icon-sm w-spacing-icon-sm shrink-0"
+                className="h-[24px] w-[24px] shrink-0"
               />
               <div className="flex flex-col">
                 <span className="text-e-subheadline text-grey-900">
@@ -156,18 +132,17 @@ const TestSecondStep = () => {
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="mt-[16px] mb-[20px] flex w-full items-center gap-[10px] rounded-sm bg-warning-100 p-[12px]">
-          <img
-            src={referIcon}
-            alt="참고"
-            className="h-spacing-icon-sm w-spacing-icon-sm shrink-0"
-          />
-          <p className="text-footnote text-grey-900 whitespace-pre-line">
-            아이의 자연스러운 표현이 가장 정확한 분석으로 이어져요.{"\n"}
-            옆에서 조용히 지켜봐 주세요.
-          </p>
+          <div className="flex items-center gap-[8px] rounded-[8px] bg-warning-100 p-[8px]">
+            <img
+              src={referIcon}
+              alt="참고"
+              className="h-[24px] w-[24px] shrink-0"
+            />
+            <p className="text-footnote text-grey-900 whitespace-pre-line">
+              아이의 자연스러운 표현이 가장 정확한 분석으로 이어져요.{"\n"}
+              옆에서 조용히 지켜봐 주세요.
+            </p>
+          </div>
         </div>
       </main>
 
