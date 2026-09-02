@@ -20,6 +20,8 @@ import TestQuestionFormStep from "../pages/test/TestQuestionFormStep";
 import ChatIntroStep from "../pages/chat/ChatIntroStep";
 import ChatRoomPage from "../pages/chat/ChatRoomPage";
 
+import DrawPage from "../pages/draw/DrawPage";
+
 import MyPage from "../pages/MyPage/MyPage";
 import ProfileEditPage from "../pages/MyPage/ProfileEditPage";
 import ChildEditPage from "../pages/MyPage/ChildEditPage";
@@ -114,6 +116,10 @@ export const router = createBrowserRouter([
       {
         path: "/chat/report/:reportId",
         element: <ChatRoomPage />,
+      },
+      {
+        path: "/draw",
+        element: <DrawPage />,
       },
       {
         element: <NavigationLayout />,
