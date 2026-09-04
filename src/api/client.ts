@@ -29,7 +29,7 @@ apiClient.interceptors.response.use(
     }
 
     // 401 인증 에러 처리
-    if (error.response.status === 401) {
+    if (error.response.status === 401 && import.meta.env.VITE_DEV_BYPASS_AUTH !== "true") {
       localStorage.removeItem("access_token");
 
       // 현재 이미 로그인 페이지에 있다면 무한 이동을 하지 않도록 방어 코드 추가

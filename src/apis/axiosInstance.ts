@@ -38,7 +38,7 @@ axiosInstance.interceptors.response.use(
     }
 
     // 401 인증 에러 처리
-    if (error.response.status === 401) {
+    if (error.response.status === 401 && import.meta.env.VITE_DEV_BYPASS_AUTH !== "true") {
       tokenStorage.remove();
 
       // 이미 로그인 페이지에 있다면 강제 리다이렉트를 차단하여 무한 루프 방지
