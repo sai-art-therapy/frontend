@@ -40,14 +40,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const isDrawingRef = useRef<boolean>(false);
 
-    // Undo 기능을 위한 히스토리
+    const hasInitializedRef = useRef<boolean>(false);
+
     const historyRef = useRef<ImageData[]>([]);
 
-    // 분석을 위한 Stroke 데이터 수집
     const strokeListRef = useRef<StrokeData[]>([]);
     const currentStrokeRef = useRef<StrokePoint[]>([]);
 
-    // 캔버스 크기 지정 및 고해상도 처리
     const resizeAndInitCanvas = useCallback(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -56,21 +55,19 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
       if (!parent) return;
 
       const ctx = canvas.getContext("2d");
-      let tempImageData: ImageData | null = null;
+      const isFirstInit = !hasInitializedRef.current;
 
-      // 이미 그려진 그림이 있다면 임시 저장
-      if (ctx && canvas.width > 0 && canvas.height > 0) {
+      let tempImageData: ImageData | null = null;
+      if (!isFirstInit && ctx && canvas.width > 0 && canvas.height > 0) {
         tempImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       }
 
       const rect = parent.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
 
-      // 물리적 픽셀 크기 설정 -> 고해상도 보장
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
 
-      // CSS 표시 크기 설정
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
 
@@ -81,8 +78,11 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
 
         if (tempImageData) {
           ctx.putImageData(tempImageData, 0, 0);
+          historyRef.current = [
+            ctx.getImageData(0, 0, canvas.width, canvas.height),
+          ];
+          strokeListRef.current = [];
         } else {
-          // 배경을 흰색으로 기본 채움 (YOLO 분석 및 PNG 변환 시 투명도 방지)
           ctx.fillStyle = "#FFFFFF";
           ctx.fillRect(0, 0, rect.width, rect.height);
           historyRef.current = [
@@ -90,6 +90,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
           ];
         }
       }
+
+      hasInitializedRef.current = true;
     }, []);
 
     useEffect(() => {
@@ -108,13 +110,14 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
 
         if (historyRef.current.length > 1) {
           historyRef.current.pop();
-          const previousState =
-            historyRef.current[historyRef.current.length - 1];
-          ctx.putImageData(previousState, 0, 0);
 
           if (strokeListRef.current.length > 0) {
             strokeListRef.current.pop();
           }
+
+          const previousState =
+            historyRef.current[historyRef.current.length - 1];
+          ctx.putImageData(previousState, 0, 0);
         }
       },
       clear: () => {
@@ -220,7 +223,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
       canvas.releasePointerCapture(e.pointerId);
       ctx.closePath();
 
-      // Stroke 기록 저장
       strokeListRef.current.push({
         tool: activeTool,
         color: selectedColor,
@@ -228,7 +230,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
         points: [...currentStrokeRef.current],
       });
 
-      // 히스토리 추가
       const currentState = ctx.getImageData(0, 0, canvas.width, canvas.height);
       historyRef.current.push(currentState);
     };
