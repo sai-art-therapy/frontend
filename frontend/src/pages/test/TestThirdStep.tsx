@@ -6,6 +6,7 @@ import returnIcon from "../../assets/icons/common/return.svg";
 import uploadpictureIcon from "../../assets/icons/test/uploadpicture.svg";
 import cameraIcon from "../../assets/icons/test/camera.svg";
 import albumIcon from "../../assets/icons/test/album.svg";
+import drawIcon from "../../assets/icons/draw/draw.svg";
 import plusbeforexIcon from "../../assets/icons/test/plusbeforex.svg";
 import xafterplusIcon from "../../assets/icons/test/xafterplus.svg";
 import referIcon from "../../assets/icons/test/refer.svg";
@@ -20,7 +21,9 @@ const TestThirdStep = () => {
   const testId = location.state?.testId;
   const childId = location.state?.childId;
 
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedOption, setSelectedOption] = useState<
+    "draw" | "camera" | "album" | null
+  >(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -132,7 +135,17 @@ const TestThirdStep = () => {
     },
   });
 
-  const handleOptionClick = (option: "camera" | "album") => {
+  const handleOptionClick = (option: "draw" | "camera" | "album") => {
+    if (selectedOption === option) {
+      setSelectedOption(null);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+        setSelectedFile(null);
+      }
+      return;
+    }
+
     setSelectedOption(option);
 
     if (previewUrl) {
@@ -163,6 +176,16 @@ const TestThirdStep = () => {
   };
 
   const handleUploadSubmit = async () => {
+    if (selectedOption === "draw") {
+      navigate("/draw", {
+        state: {
+          testId,
+          childId,
+        },
+      });
+      return;
+    }
+
     if (!testId) {
       alert("검사 정보가 누락되었습니다. 첫 페이지부터 다시 진행해 주세요.");
       navigate("/test");
@@ -184,6 +207,9 @@ const TestThirdStep = () => {
       alert("이미지 처리 중 오류가 발생했습니다.");
     }
   };
+
+  const isButtonEnabled =
+    selectedOption === "draw" || (selectedFile !== null && previewUrl !== null);
 
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen relative">
@@ -211,11 +237,9 @@ const TestThirdStep = () => {
         />
 
         <div className="mt-[8px] flex flex-col">
-          <h2 className="text-e-title-1 text-grey-900">
-            그림을 업로드해 주세요
-          </h2>
+          <h2 className="text-e-title-1 text-grey-900">그림을 그려주세요</h2>
           <p className="mt-[4px] text-body-1 text-grey-600 whitespace-pre-line">
-            집, 나무, 사람이 함께 있는 그림을{"\n"}한 장의 사진으로 올려주세요
+            집, 나무, 사람이 함께 있는 그림을 그려주세요
           </p>
         </div>
 
@@ -235,33 +259,32 @@ const TestThirdStep = () => {
           className="hidden"
         />
 
-        <div className="mt-[40px] flex w-full flex-col gap-[16px]">
+        <div className="mt-[40px] flex w-full flex-col">
+          {/* 앱에서 그림 그리기 버튼 */}
           <div
-            onClick={() => handleOptionClick("camera")}
+            onClick={() => handleOptionClick("draw")}
             className={`flex w-full cursor-pointer items-center justify-between rounded-md border p-[16px] transition-colors duration-200 ${
-              selectedOption === "camera"
-                ? "border-[#FFA98A] bg-white"
+              selectedOption === "draw"
+                ? "border-main-300 bg-white"
                 : "border-grey-200 bg-white"
             }`}
           >
             <div className="flex items-center gap-[16px]">
               <div
                 className={`flex items-center justify-center gap-[10px] rounded-sm p-[16px] transition-colors duration-200 ${
-                  selectedOption === "camera" ? "bg-[#FFF0EB]" : "bg-grey-50"
+                  selectedOption === "draw" ? "bg-main-100" : "bg-grey-50"
                 }`}
               >
                 <div
                   className={`h-[24px] w-[24px] transition-colors duration-200 ${
-                    selectedOption === "camera"
-                      ? "bg-[#FF6229]"
-                      : "bg-[#8B97A7]"
+                    selectedOption === "draw" ? "bg-main-500" : "bg-grey-500"
                   }`}
                   style={{
-                    WebkitMaskImage: `url("${cameraIcon}")`,
+                    WebkitMaskImage: `url("${drawIcon}")`,
                     WebkitMaskSize: "contain",
                     WebkitMaskPosition: "center",
                     WebkitMaskRepeat: "no-repeat",
-                    maskImage: `url("${cameraIcon}")`,
+                    maskImage: `url("${drawIcon}")`,
                     maskSize: "contain",
                     maskPosition: "center",
                     maskRepeat: "no-repeat",
@@ -269,59 +292,111 @@ const TestThirdStep = () => {
                 />
               </div>
               <span className="text-e-title-3 text-grey-800 line-clamp-1">
-                사진 촬영
+                앱에서 그림 그리기
               </span>
             </div>
             <img
-              src={
-                selectedOption === "camera" ? xafterplusIcon : plusbeforexIcon
-              }
+              src={selectedOption === "draw" ? xafterplusIcon : plusbeforexIcon}
               alt="선택"
               className="h-[14px] w-[14px] shrink-0"
             />
           </div>
 
-          <div
-            onClick={() => handleOptionClick("album")}
-            className={`flex w-full cursor-pointer items-center justify-between rounded-md border p-[16px] transition-colors duration-200 ${
-              selectedOption === "album"
-                ? "border-[#FFA98A] bg-white"
-                : "border-grey-200 bg-white"
-            }`}
-          >
-            <div className="flex items-center gap-[16px]">
-              <div
-                className={`flex items-center justify-center gap-[10px] rounded-sm p-[16px] transition-colors duration-200 ${
-                  selectedOption === "album" ? "bg-[#FFF0EB]" : "bg-grey-50"
-                }`}
-              >
+          <div className="my-[16px] flex w-full justify-center items-center gap-[16px]">
+            <div className="w-[160px] h-[1px] bg-grey-200 flex-1" />
+            <span className="text-footnote text-grey-500 shrink-0">OR</span>
+            <div className="w-[160px] h-[1px] bg-grey-200 flex-1" />
+          </div>
+
+          {/* 사진 촬영, 앨범 선택 버튼 */}
+          <div className="flex w-full flex-col gap-[16px]">
+            <div
+              onClick={() => handleOptionClick("camera")}
+              className={`flex w-full cursor-pointer items-center justify-between rounded-md border p-[16px] transition-colors duration-200 ${
+                selectedOption === "camera"
+                  ? "border-main-300 bg-white"
+                  : "border-grey-200 bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-[16px]">
                 <div
-                  className={`h-[24px] w-[24px] transition-colors duration-200 ${
-                    selectedOption === "album" ? "bg-[#FF6229]" : "bg-[#8B97A7]"
+                  className={`flex items-center justify-center gap-[10px] rounded-sm p-[16px] transition-colors duration-200 ${
+                    selectedOption === "camera" ? "bg-main-100" : "bg-grey-50"
                   }`}
-                  style={{
-                    WebkitMaskImage: `url("${albumIcon}")`,
-                    WebkitMaskSize: "contain",
-                    WebkitMaskPosition: "center",
-                    WebkitMaskRepeat: "no-repeat",
-                    maskImage: `url("${albumIcon}")`,
-                    maskSize: "contain",
-                    maskPosition: "center",
-                    maskRepeat: "no-repeat",
-                  }}
-                />
+                >
+                  <div
+                    className={`h-[24px] w-[24px] transition-colors duration-200 ${
+                      selectedOption === "camera"
+                        ? "bg-main-500"
+                        : "bg-grey-500"
+                    }`}
+                    style={{
+                      WebkitMaskImage: `url("${cameraIcon}")`,
+                      WebkitMaskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskImage: `url("${cameraIcon}")`,
+                      maskSize: "contain",
+                      maskPosition: "center",
+                      maskRepeat: "no-repeat",
+                    }}
+                  />
+                </div>
+                <span className="text-e-title-3 text-grey-800 line-clamp-1">
+                  사진 촬영
+                </span>
               </div>
-              <span className="text-e-title-3 text-grey-800 line-clamp-1">
-                앨범에서 선택
-              </span>
+              <img
+                src={
+                  selectedOption === "camera" ? xafterplusIcon : plusbeforexIcon
+                }
+                alt="선택"
+                className="h-[14px] w-[14px] shrink-0"
+              />
             </div>
-            <img
-              src={
-                selectedOption === "album" ? xafterplusIcon : plusbeforexIcon
-              }
-              alt="선택"
-              className="h-[14px] w-[14px] shrink-0"
-            />
+
+            <div
+              onClick={() => handleOptionClick("album")}
+              className={`flex w-full cursor-pointer items-center justify-between rounded-md border p-[16px] transition-colors duration-200 ${
+                selectedOption === "album"
+                  ? "border-main-300 bg-white"
+                  : "border-grey-200 bg-white"
+              }`}
+            >
+              <div className="flex items-center gap-[16px]">
+                <div
+                  className={`flex items-center justify-center gap-[10px] rounded-sm p-[16px] transition-colors duration-200 ${
+                    selectedOption === "album" ? "bg-main-100" : "bg-grey-50"
+                  }`}
+                >
+                  <div
+                    className={`h-[24px] w-[24px] transition-colors duration-200 ${
+                      selectedOption === "album" ? "bg-main-500" : "bg-grey-500"
+                    }`}
+                    style={{
+                      WebkitMaskImage: `url("${albumIcon}")`,
+                      WebkitMaskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskImage: `url("${albumIcon}")`,
+                      maskSize: "contain",
+                      maskPosition: "center",
+                      maskRepeat: "no-repeat",
+                    }}
+                  />
+                </div>
+                <span className="text-e-title-3 text-grey-800 line-clamp-1">
+                  앨범에서 선택
+                </span>
+              </div>
+              <img
+                src={
+                  selectedOption === "album" ? xafterplusIcon : plusbeforexIcon
+                }
+                alt="선택"
+                className="h-[14px] w-[14px] shrink-0"
+              />
+            </div>
           </div>
         </div>
 
@@ -357,7 +432,7 @@ const TestThirdStep = () => {
         <div className="flex w-full items-center gap-[16px]">
           <ActionButton
             variant="darkGrey"
-            disabled={!selectedFile || isPending}
+            disabled={!isButtonEnabled || isPending}
             className="w-full"
             showIcon={false}
             onClick={handleUploadSubmit}
