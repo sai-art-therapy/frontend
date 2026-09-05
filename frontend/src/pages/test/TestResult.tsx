@@ -295,8 +295,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
       reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey];
 
   const imageUrl = (() => {
-    const userLocalImage = sessionStorage.getItem("user_uploaded_image");
-    const localFallback = localImageUrl || userLocalImage || fallbackImageUrl;
+    const localFallback = localImageUrl || fallbackImageUrl;
 
     if (isSharedView) {
       return rawImgPath && !rawImgPath.includes("Not Found")
@@ -634,11 +633,8 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
                 "⚠️ 이미지 로드 실패, 대체 이미지를 적용합니다. URL:",
                 imageUrl,
               );
-              const userLocalImage = sessionStorage.getItem(
-                "user_uploaded_image",
-              );
               (e.target as HTMLImageElement).src =
-                localImageUrl || userLocalImage || fallbackImageUrl;
+                localImageUrl || fallbackImageUrl;
             }}
           />
 

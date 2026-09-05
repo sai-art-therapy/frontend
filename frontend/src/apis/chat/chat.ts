@@ -38,6 +38,9 @@ export const sendChatMessage = async (
   const response = await axiosInstance.post<ChatMessageResponse>(
     `/api/chat/sessions/${sessionId}/messages`,
     data,
+    {
+      timeout: 90000,
+    },
   );
   return response.data;
 };

@@ -64,7 +64,11 @@ const ChatRoomPage = () => {
 
   const hasAutoSent = useRef(false);
 
-  const { data: rawReports = [] } = useAppQuery<any[]>(["reports"], getReports);
+  const { data: rawReports = [] } = useAppQuery<any[]>(
+    ["reports"],
+    getReports,
+    { staleTime: 0 },
+  );
 
   const reportList = useMemo(() => {
     return rawReports.map((r: any) => ({
@@ -78,6 +82,7 @@ const ChatRoomPage = () => {
   const { data: sessionList = [] } = useAppQuery<any>(
     ["chatSessions"],
     getChatSessions,
+    { staleTime: 0 },
   );
 
   const { mutate: handleStartNewChat } = useAppMutation<
@@ -323,11 +328,19 @@ const ChatRoomPage = () => {
 
         let responseText = "";
         if (response && typeof response === "object") {
+          const lastAssistantMessage = Array.isArray(response.messages)
+            ? [...response.messages]
+                .reverse()
+                .find((m: any) => m?.role === "assistant")
+            : undefined;
+
           responseText =
             response.answer ||
             response.assistant_message?.content ||
             response.message ||
             response.content ||
+            response.last_message ||
+            lastAssistantMessage?.content ||
             JSON.stringify(response);
         } else {
           responseText = response;
