@@ -5,6 +5,7 @@ import React, {
   forwardRef,
   useCallback,
 } from "react";
+import type { ToolType } from "./DrawingToolbar";
 import type {
   CanvasDrawingData,
   DrawingPoint,
@@ -20,12 +21,13 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 interface InternalStrokePoint {
   x: number; 
   y: number;
-  t: number; 
-  pressure: number;
+  t: number;
+  pressure: number; 
 }
 
 interface InternalStroke {
   strokeId: string;
+  tool: ToolType;
   pointerType: DrawingPointerType;
   lineWidth: number;
   points: InternalStrokePoint[];
@@ -39,13 +41,18 @@ export interface CanvasRef {
 }
 
 interface CanvasProps {
+  activeTool: ToolType;
   selectedColor: string;
   lineWidth?: number;
+  eraserWidth?: number;
   onStrokeCountChange?: (count: number) => void;
 }
 
 export const Canvas = forwardRef<CanvasRef, CanvasProps>(
-  ({ selectedColor, lineWidth = 4, onStrokeCountChange }, ref) => {
+  (
+    { activeTool, selectedColor, lineWidth = 4, eraserWidth = 20, onStrokeCountChange },
+    ref,
+  ) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const isDrawingRef = useRef<boolean>(false);
     const activePointerIdRef = useRef<number | null>(null);
@@ -116,6 +123,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
       return () => window.removeEventListener("resize", resizeAndInitCanvas);
     }, [resizeAndInitCanvas]);
 
+    // Imperative API!!
     useImperativeHandle(ref, () => ({
       undo: () => {
         const canvas = canvasRef.current;
@@ -179,8 +187,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
         const sessionStart = sessionStartRef.current ?? now;
         const durationMs = Math.max(1, Math.round(now - sessionStart));
 
-        const strokes: DrawingStroke[] = strokeListRef.current.map(
-          (stroke) => {
+        const strokes: DrawingStroke[] = strokeListRef.current
+          .filter((stroke) => stroke.tool === "pen")
+          .map((stroke) => {
             const distinctPressures = new Set(
               stroke.points.map((p) => p.pressure),
             );
@@ -206,8 +215,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
               brush_width_px: stroke.lineWidth,
               points,
             };
-          },
-        );
+          });
 
         return {
           schema_version: 1,
@@ -266,9 +274,15 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
 
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.globalCompositeOperation = "source-over";
-      ctx.strokeStyle = selectedColor;
-      ctx.lineWidth = lineWidth;
+
+      if (activeTool === "eraser") {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = eraserWidth;
+      } else {
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = selectedColor;
+        ctx.lineWidth = lineWidth;
+      }
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -314,8 +328,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
       
       strokeListRef.current.push({
         strokeId: `stroke-${strokeListRef.current.length + 1}`,
+        tool: activeTool,
         pointerType: currentPointerTypeRef.current,
-        lineWidth,
+        lineWidth: activeTool === "eraser" ? eraserWidth : lineWidth,
         points: [...currentStrokeRef.current],
       });
 

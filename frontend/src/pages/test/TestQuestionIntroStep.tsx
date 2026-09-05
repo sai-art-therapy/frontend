@@ -26,11 +26,11 @@ const TestQuestionIntroStep = () => {
   const imageUrl = location.state?.imageUrl;
 
   const [questions, setQuestions] = useState<PdiQuestion[]>([]);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(true);
 
-  // React StrictMode에서 effect가 두 번 실행되어 PDI 시작 API가 중복 호출되는 것을 방지
   const hasStartedRef = useRef(false);
 
-  const { mutate: handleStartPdi, isPending } = useAppMutation<any, any>(
+  const { mutate: handleStartPdi } = useAppMutation<any, any>(
     (tId: number) => startPdiQuestions(tId),
     {
       onSuccess: (data) => {
@@ -38,9 +38,11 @@ const TestQuestionIntroStep = () => {
         if (data && data.questions) {
           setQuestions(data.questions);
         }
+        setIsGeneratingQuestions(false);
       },
       onError: (error) => {
         console.error("PDI 질문 생성 실패:", error);
+        setIsGeneratingQuestions(false);
         alert(
           "진행할 수 없는 상태이거나 오류가 발생했습니다. 검사 목록으로 이동합니다.",
         );
@@ -76,7 +78,6 @@ const TestQuestionIntroStep = () => {
     hasStartedRef.current = true;
 
     handleStartPdi(Number(testId));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId]);
 
   return (
@@ -86,7 +87,7 @@ const TestQuestionIntroStep = () => {
           src={returnIcon}
           alt="뒤로가기"
           onClick={() => {
-            if (isPending || isSkipping) return;
+            if (isGeneratingQuestions || isSkipping) return;
             const confirmExit = window.confirm(
               "지금 나가시면 진행 중인 검사가 중단될 수 있습니다.\n정말 나가시겠습니까?",
             );
@@ -94,7 +95,7 @@ const TestQuestionIntroStep = () => {
               navigate("/test", { replace: true });
             }
           }}
-          className={`h-[14px] w-[14px] ${isPending || isSkipping ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+          className={`h-[14px] w-[14px] ${isGeneratingQuestions || isSkipping ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
         />
         <h1 className="text-e-title-3 text-grey-900">미술 심리 검사</h1>
       </div>
@@ -126,7 +127,7 @@ const TestQuestionIntroStep = () => {
           </div>
 
           <div className="flex flex-col gap-[8px]">
-            {isPending ? (
+            {isGeneratingQuestions ? (
               <div className="text-center py-[20px] text-[13px] text-grey-400">
                 아이의 맞춤형 질문을 생성하고 있어요...
               </div>
@@ -171,7 +172,7 @@ const TestQuestionIntroStep = () => {
             size="xl"
             showIcon={false}
             className="flex-1"
-            disabled={isPending || isSkipping}
+            disabled={isGeneratingQuestions || isSkipping}
             onClick={() => handleSkipAllPdi(Number(testId))}
           >
             건너뛰기
@@ -182,7 +183,9 @@ const TestQuestionIntroStep = () => {
             size="xl"
             showIcon={false}
             className="flex-1"
-            disabled={isPending || isSkipping || questions.length === 0}
+            disabled={
+              isGeneratingQuestions || isSkipping || questions.length === 0
+            }
             onClick={() =>
               navigate("/test-question-form-step", {
                 state: {

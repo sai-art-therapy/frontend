@@ -1,39 +1,31 @@
 import React from "react";
 import returnDrawIcon from "../../assets/icons/draw/returndraw.svg";
+import eraserIcon from "../../assets/icons/draw/eraser.svg";
+import penIcon from "../../assets/icons/draw/pencil.svg";
+
+export type ToolType = "pen" | "eraser";
 
 interface DrawingToolbarProps {
-  onUndo: () => void;
-  onClearAll: () => void;
-  canUndo: boolean;
-  canClearAll: boolean;
+  activeTool: ToolType;
+  onSelectTool: (tool: ToolType) => void;
+  onUndo?: () => void;
 }
 
 export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
+  activeTool,
+  onSelectTool,
   onUndo,
-  onClearAll,
-  canUndo,
-  canClearAll,
 }) => {
   return (
-    <div className="flex items-center justify-between px-[16px] py-[8px]">
+    <div className="flex items-center justify-end px-[16px] py-[8px] pr-[20px]">
+      {/* 되돌리기 버튼 */}
       <button
-        type="button"
-        onClick={onClearAll}
-        disabled={!canClearAll}
-        className="flex h-[36px] cursor-pointer items-center justify-center rounded-[1000px] bg-grey-50 px-[14px] text-e-footnote text-grey-700 transition-colors active:bg-grey-100 disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        전체 지우기
-      </button>
-
-      <button
-        type="button"
         onClick={onUndo}
-        disabled={!canUndo}
-        className="flex h-[52px] w-[52px] aspect-square cursor-pointer items-center justify-center rounded-[1000px] bg-grey-50 p-[14px] transition-colors active:bg-grey-100 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex w-[52px] h-[52px] p-[14px] justify-center items-center aspect-square rounded-[1000px] bg-grey-50 active:bg-grey-100 transition-colors cursor-pointer"
         aria-label="되돌리기"
       >
         <span
-          className="block h-[24px] w-[24px] shrink-0 bg-grey-800"
+          className="block w-[24px] h-[24px] shrink-0 bg-grey-800"
           style={{
             maskImage: `url("${returnDrawIcon}")`,
             WebkitMaskImage: `url("${returnDrawIcon}")`,
@@ -46,6 +38,62 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
           }}
         />
       </button>
+
+      <div className="ml-[9px] flex p-[6px] items-center gap-[6px] rounded-[1000px] bg-grey-50">
+        {/* 지우개 버튼 */}
+        <button
+          onClick={() => onSelectTool("eraser")}
+          className={`flex w-[40px] h-[40px] p-[8px] justify-center items-center aspect-square rounded-[1000px] transition-colors cursor-pointer ${
+            activeTool === "eraser"
+              ? "bg-main-100 text-main-500"
+              : "bg-grey-50 text-grey-600"
+          }`}
+          aria-label="지우개"
+        >
+          <span
+            className={`block w-[24px] h-[24px] shrink-0 ${
+              activeTool === "eraser" ? "bg-main-500" : "bg-grey-600"
+            }`}
+            style={{
+              maskImage: `url("${eraserIcon}")`,
+              WebkitMaskImage: `url("${eraserIcon}")`,
+              maskSize: "contain",
+              WebkitMaskSize: "contain",
+              maskPosition: "center",
+              WebkitMaskPosition: "center",
+              maskRepeat: "no-repeat",
+              WebkitMaskRepeat: "no-repeat",
+            }}
+          />
+        </button>
+
+        {/* 그리기 버튼 */}
+        <button
+          onClick={() => onSelectTool("pen")}
+          className={`flex w-[40px] h-[40px] p-[8px] justify-center items-center aspect-square rounded-[1000px] transition-colors cursor-pointer ${
+            activeTool === "pen"
+              ? "bg-main-100 text-main-500"
+              : "bg-grey-50 text-grey-600"
+          }`}
+          aria-label="그리기"
+        >
+          <span
+            className={`block w-[24px] h-[24px] shrink-0 ${
+              activeTool === "pen" ? "bg-main-500" : "bg-grey-600"
+            }`}
+            style={{
+              maskImage: `url("${penIcon}")`,
+              WebkitMaskImage: `url("${penIcon}")`,
+              maskSize: "contain",
+              WebkitMaskSize: "contain",
+              maskPosition: "center",
+              WebkitMaskPosition: "center",
+              maskRepeat: "no-repeat",
+              WebkitMaskRepeat: "no-repeat",
+            }}
+          />
+        </button>
+      </div>
     </div>
   );
 };

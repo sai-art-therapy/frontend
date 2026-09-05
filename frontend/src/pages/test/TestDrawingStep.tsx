@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 import { TopBar } from "../../components/common/TopBar";
 import { DrawingToolbar } from "../../components/draw/DrawingToolbar";
+import type { ToolType } from "../../components/draw/DrawingToolbar";
 import { ColorPicker, PALETTE_COLORS } from "../../components/draw/ColorPicker";
 import { Canvas } from "../../components/draw/Canvas";
 import type { CanvasRef } from "../../components/draw/Canvas";
@@ -24,6 +25,7 @@ const TestDrawingStep = () => {
 
   const canvasRef = useRef<CanvasRef>(null);
 
+  const [activeTool, setActiveTool] = useState<ToolType>("pen");
   const [selectedColor, setSelectedColor] = useState<string>(PALETTE_COLORS[0]);
   const [strokeCount, setStrokeCount] = useState(0);
 
@@ -58,7 +60,6 @@ const TestDrawingStep = () => {
             ? detail?.code
             : undefined;
 
-        // 이미 분석/PDI/리포트가 진행된 검사는 같은 testId로 재시도할 수 없다.
         if (error.response?.status === 409 || code === "drawing_not_replaceable") {
           alert(DRAWING_NOT_REPLACEABLE_MESSAGE);
           navigate("/test", { replace: true });
@@ -85,11 +86,6 @@ const TestDrawingStep = () => {
   const handleUndo = () => {
     if (isPending) return;
     canvasRef.current?.undo();
-  };
-
-  const handleClearAll = () => {
-    if (isPending) return;
-    canvasRef.current?.clear();
   };
 
   const handleComplete = async () => {
@@ -122,10 +118,9 @@ const TestDrawingStep = () => {
       />
 
       <DrawingToolbar
+        activeTool={activeTool}
+        onSelectTool={setActiveTool}
         onUndo={handleUndo}
-        onClearAll={handleClearAll}
-        canUndo={strokeCount > 0 && !isPending}
-        canClearAll={strokeCount > 0 && !isPending}
       />
 
       <div className="mt-[15px]">
@@ -135,6 +130,7 @@ const TestDrawingStep = () => {
       <div className="relative w-full flex-1">
         <Canvas
           ref={canvasRef}
+          activeTool={activeTool}
           selectedColor={selectedColor}
           onStrokeCountChange={setStrokeCount}
         />
