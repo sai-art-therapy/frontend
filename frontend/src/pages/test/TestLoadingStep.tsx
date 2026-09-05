@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 import imagecheckIcon from "../../assets/icons/test/imagecheck.svg";
 import { useAppMutation, useAppQuery } from "../../hooks/apiHooks";
 import { analyzeTest } from "../../apis/test/test";
 import { getChildren } from "../../api/mypage";
+import type { AnalyzeTestResponse } from "../../types/test.type";
 
 const TestLoadingStep = () => {
   const navigate = useNavigate();
@@ -14,29 +15,40 @@ const TestLoadingStep = () => {
   const childId = location.state?.childId;
   const imageFile = location.state?.imageFile;
   const imageUrl = location.state?.imageUrl;
+  // 직접 그리기는 duration_ms를 업로드 시점에 이미 서버에 저장했으므로
+  // 시간 입력 화면(/test-time-input-step)을 건너뛰고 바로 PDI로 이동한다.
+  const drawingSource = location.state?.drawingSource;
 
   const [progress, setProgress] = useState(0);
   const [childName, setChildName] = useState("아이");
+
+  // React StrictMode에서 effect가 두 번 실행되어 분석 API가 중복 호출되는 것을 방지
+  const hasStartedRef = useRef(false);
 
   const { data: childrenList } = useAppQuery(["children"], getChildren, {
     enabled: !!childId,
   });
 
-  const { mutate: startAnalyze } = useAppMutation<string, any>(
-    (tId: number) => analyzeTest(tId),
+  const { mutate: startAnalyze } = useAppMutation<AnalyzeTestResponse, number>(
+    (tId) => analyzeTest(tId),
     {
-      onSuccess: (data) => {
-        console.log("분석 요청 성공:", data);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const reportId = (data as any)?.report_id;
+      onSuccess: () => {
+        // 분석 응답에는 이 단계의 report_id가 없다. 최종 리포트는 이후
+        // 단계(리포트 생성/목록 조회)에서 받은 ID를 사용해야 하므로 여기서는
+        // 응답에서 report_id를 꺼내 쓰지 않는다.
         setProgress(100);
+
+        const nextPath =
+          drawingSource === "canvas"
+            ? "/test-question-intro-step"
+            : "/test-time-input-step";
+
         setTimeout(() => {
-          navigate("/test-time-input-step", {
+          navigate(nextPath, {
             state: {
               testId,
               childId,
               childName,
-              reportId,
               imageFile,
               imageUrl,
             },
@@ -58,6 +70,9 @@ const TestLoadingStep = () => {
       return;
     }
 
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
     startAnalyze(Number(testId));
 
     const timer = setTimeout(() => {
@@ -65,6 +80,7 @@ const TestLoadingStep = () => {
     }, 100);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId]);
 
   useEffect(() => {

@@ -12,6 +12,7 @@ import TestStart from "../pages/test/TestStart";
 import TestFirstStep from "../pages/test/TestFirstStep";
 import TestSecondStep from "../pages/test/TestSecondStep";
 import TestThirdStep from "../pages/test/TestThirdStep";
+import TestDrawingStep from "../pages/test/TestDrawingStep";
 import TestLoadingStep from "../pages/test/TestLoadingStep";
 import TestTimeInputStep from "../pages/test/TestTimeInputStep";
 import TestResult from "../pages/test/TestResult";
@@ -19,8 +20,6 @@ import TestQuestionIntroStep from "../pages/test/TestQuestionIntroStep";
 import TestQuestionFormStep from "../pages/test/TestQuestionFormStep";
 import ChatIntroStep from "../pages/chat/ChatIntroStep";
 import ChatRoomPage from "../pages/chat/ChatRoomPage";
-
-import DrawPage from "../pages/draw/DrawPage";
 
 import MyPage from "../pages/MyPage/MyPage";
 import ProfileEditPage from "../pages/MyPage/ProfileEditPage";
@@ -90,6 +89,10 @@ export const router = createBrowserRouter([
         element: <TestThirdStep />,
       },
       {
+        path: "/test-drawing-step",
+        element: <TestDrawingStep />,
+      },
+      {
         path: "/test-loading-step",
         element: <TestLoadingStep />,
       },
@@ -116,10 +119,6 @@ export const router = createBrowserRouter([
       {
         path: "/chat/report/:reportId",
         element: <ChatRoomPage />,
-      },
-      {
-        path: "/draw",
-        element: <DrawPage />,
       },
       {
         element: <NavigationLayout />,

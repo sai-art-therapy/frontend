@@ -17,9 +17,14 @@ export interface ValidationError {
   type: string;
 }
 
+export interface ApiErrorDetail {
+  code?: string;
+  message?: string;
+}
+
 export interface ApiError {
   message?: string;
-  detail?: string | ValidationError[];
+  detail?: string | ValidationError[] | ApiErrorDetail;
 }
 
 export type QueryOptions<TData, TResult = TData> = Omit<

@@ -13,6 +13,8 @@ import referIcon from "../../assets/icons/test/refer.svg";
 
 import { useAppMutation } from "../../hooks/apiHooks";
 import { uploadTestImage } from "../../apis/test/test";
+import type { UploadTestImageResponse } from "../../types/test.type";
+import { saveImageToSessionAsBase64 } from "../../utils/image";
 
 const TestThirdStep = () => {
   const navigate = useNavigate();
@@ -85,31 +87,15 @@ const TestThirdStep = () => {
     });
   };
 
-  const saveImageToSessionAsBase64 = (file: File): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          try {
-            sessionStorage.setItem("user_uploaded_image", reader.result);
-          } catch (err) {
-            console.warn("⚠️ sessionStorage 저장 실패 (용량 초과 가능):", err);
-          }
-        }
-        resolve();
-      };
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
-  };
-
   const { mutate: uploadImage, isPending } = useAppMutation<
-    string,
+    UploadTestImageResponse,
     { testId: number; file: File }
   >(({ testId, file }) => uploadTestImage(testId, file), {
-    onSuccess: async (data, variables) => {
+    onSuccess: async (_data, variables) => {
       const targetFile = variables.file;
-      const uploadedImageUrl = typeof data === "string" ? data : previewUrl;
+      // 백엔드 응답은 객체이며 브라우저에서 바로 쓸 이미지 URL을 주지 않으므로,
+      // 미리보기 화면에서 이미 만들어둔 previewUrl을 그대로 사용한다.
+      const uploadedImageUrl = previewUrl;
 
       try {
         await saveImageToSessionAsBase64(targetFile);
@@ -177,7 +163,7 @@ const TestThirdStep = () => {
 
   const handleUploadSubmit = async () => {
     if (selectedOption === "draw") {
-      navigate("/draw", {
+      navigate("/test-drawing-step", {
         state: {
           testId,
           childId,

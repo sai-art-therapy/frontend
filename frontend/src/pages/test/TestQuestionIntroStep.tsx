@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionButton } from "../../components/common/ActionButton";
 
@@ -26,6 +26,9 @@ const TestQuestionIntroStep = () => {
   const imageUrl = location.state?.imageUrl;
 
   const [questions, setQuestions] = useState<PdiQuestion[]>([]);
+
+  // React StrictMode에서 effect가 두 번 실행되어 PDI 시작 API가 중복 호출되는 것을 방지
+  const hasStartedRef = useRef(false);
 
   const { mutate: handleStartPdi, isPending } = useAppMutation<any, any>(
     (tId: number) => startPdiQuestions(tId),
@@ -69,10 +72,12 @@ const TestQuestionIntroStep = () => {
       return;
     }
 
-    if (questions.length === 0) {
-      handleStartPdi(Number(testId));
-    }
-  }, [testId, questions.length]);
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
+    handleStartPdi(Number(testId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testId]);
 
   return (
     <div className="flex w-full flex-col bg-white font-sans min-h-screen">

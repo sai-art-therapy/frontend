@@ -5,47 +5,62 @@ import React, {
   forwardRef,
   useCallback,
 } from "react";
-import type { ToolType } from "./DrawingToolbar";
+import type {
+  CanvasDrawingData,
+  DrawingPoint,
+  DrawingPointerType,
+  DrawingStroke,
+} from "../../types/test.type";
 
-export interface StrokePoint {
-  x: number;
+const MAX_TOTAL_POINTS = 250_000;
+const SAMPLE_INTERVAL_MS = 1000 / 60;
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+interface InternalStrokePoint {
+  x: number; 
   y: number;
-  time: number;
+  t: number; 
   pressure: number;
 }
 
-export interface StrokeData {
-  tool: ToolType;
-  color: string;
+interface InternalStroke {
+  strokeId: string;
+  pointerType: DrawingPointerType;
   lineWidth: number;
-  points: StrokePoint[];
+  points: InternalStrokePoint[];
 }
 
 export interface CanvasRef {
   undo: () => void;
   clear: () => void;
   getImageFile: (filename?: string) => Promise<File | null>;
-  getStrokes: () => StrokeData[];
+  getDrawingData: () => CanvasDrawingData;
 }
 
 interface CanvasProps {
-  activeTool: ToolType;
   selectedColor: string;
   lineWidth?: number;
-  eraserWidth?: number;
+  onStrokeCountChange?: (count: number) => void;
 }
 
 export const Canvas = forwardRef<CanvasRef, CanvasProps>(
-  ({ activeTool, selectedColor, lineWidth = 4, eraserWidth = 20 }, ref) => {
+  ({ selectedColor, lineWidth = 4, onStrokeCountChange }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const isDrawingRef = useRef<boolean>(false);
+    const activePointerIdRef = useRef<number | null>(null);
 
     const hasInitializedRef = useRef<boolean>(false);
 
     const historyRef = useRef<ImageData[]>([]);
 
-    const strokeListRef = useRef<StrokeData[]>([]);
-    const currentStrokeRef = useRef<StrokePoint[]>([]);
+    const strokeListRef = useRef<InternalStroke[]>([]);
+    const currentStrokeRef = useRef<InternalStrokePoint[]>([]);
+    const currentPointerTypeRef = useRef<DrawingPointerType>("unknown");
+
+    const sessionStartRef = useRef<number | null>(null);
+    const lastSampleTimeRef = useRef<number>(0);
+    const totalPointCountRef = useRef<number>(0);
 
     const resizeAndInitCanvas = useCallback(() => {
       const canvas = canvasRef.current;
@@ -82,6 +97,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
             ctx.getImageData(0, 0, canvas.width, canvas.height),
           ];
           strokeListRef.current = [];
+          onStrokeCountChange?.(0);
         } else {
           ctx.fillStyle = "#FFFFFF";
           ctx.fillRect(0, 0, rect.width, rect.height);
@@ -100,7 +116,6 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
       return () => window.removeEventListener("resize", resizeAndInitCanvas);
     }, [resizeAndInitCanvas]);
 
-    // Imperative API!!
     useImperativeHandle(ref, () => ({
       undo: () => {
         const canvas = canvasRef.current;
@@ -118,6 +133,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
           const previousState =
             historyRef.current[historyRef.current.length - 1];
           ctx.putImageData(previousState, 0, 0);
+
+          onStrokeCountChange?.(strokeListRef.current.length);
         }
       },
       clear: () => {
@@ -134,6 +151,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
           ctx.getImageData(0, 0, canvas.width, canvas.height),
         ];
         strokeListRef.current = [];
+
+        onStrokeCountChange?.(0);
       },
       getImageFile: async (filename = "drawing.png") => {
         const canvas = canvasRef.current;
@@ -150,52 +169,112 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
           }, "image/png");
         });
       },
-      getStrokes: () => strokeListRef.current,
+      getDrawingData: (): CanvasDrawingData => {
+        const canvas = canvasRef.current;
+        const rect = canvas?.getBoundingClientRect();
+        const width = rect && rect.width > 0 ? rect.width : 1;
+        const height = rect && rect.height > 0 ? rect.height : 1;
+
+        const now = performance.now();
+        const sessionStart = sessionStartRef.current ?? now;
+        const durationMs = Math.max(1, Math.round(now - sessionStart));
+
+        const strokes: DrawingStroke[] = strokeListRef.current.map(
+          (stroke) => {
+            const distinctPressures = new Set(
+              stroke.points.map((p) => p.pressure),
+            );
+            const isMeasured =
+              stroke.pointerType === "pen" && distinctPressures.size > 1;
+
+            const points: DrawingPoint[] = stroke.points.map((p) => {
+              const point: DrawingPoint = {
+                x: clamp01(p.x / width),
+                y: clamp01(p.y / height),
+                t_ms: Math.round(p.t - sessionStart),
+              };
+              if (isMeasured) {
+                point.pressure = p.pressure;
+              }
+              return point;
+            });
+
+            return {
+              stroke_id: stroke.strokeId,
+              pointer_type: stroke.pointerType,
+              pressure_source: isMeasured ? "measured" : "unavailable",
+              brush_width_px: stroke.lineWidth,
+              points,
+            };
+          },
+        );
+
+        return {
+          schema_version: 1,
+          canvas: {
+            width: canvas?.width ?? 0,
+            height: canvas?.height ?? 0,
+          },
+          duration_ms: durationMs,
+          strokes,
+        };
+      },
     }));
 
-    // PointerEvent 기준 좌표 및 필압 측정
     const getPointerDetails = (e: React.PointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
-      if (!canvas) return { x: 0, y: 0, pressure: 0.5 };
+      if (!canvas) return { x: 0, y: 0, pressure: 0 };
 
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const pressure =
-        e.pressure !== undefined && e.pressure !== 0 ? e.pressure : 0.5;
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        pressure: e.pressure,
+      };
+    };
 
-      return { x, y, pressure };
+    const toDrawingPointerType = (pointerType: string): DrawingPointerType => {
+      if (pointerType === "pen" || pointerType === "touch" || pointerType === "mouse") {
+        return pointerType;
+      }
+      return "unknown";
     };
 
     const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (!e.isPrimary) return;
+
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
       canvas.setPointerCapture(e.pointerId);
+      activePointerIdRef.current = e.pointerId;
       isDrawingRef.current = true;
+
+      if (sessionStartRef.current === null) {
+        sessionStartRef.current = performance.now();
+      }
 
       const { x, y, pressure } = getPointerDetails(e);
       const now = performance.now();
 
-      currentStrokeRef.current = [{ x, y, time: now, pressure }];
+      currentPointerTypeRef.current = toDrawingPointerType(e.pointerType);
+      currentStrokeRef.current = [{ x, y, t: now, pressure }];
+      lastSampleTimeRef.current = now;
+      totalPointCountRef.current += 1;
 
       ctx.beginPath();
       ctx.moveTo(x, y);
-
-      if (activeTool === "eraser") {
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = eraserWidth;
-      } else {
-        ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = selectedColor;
-        ctx.lineWidth = lineWidth;
-      }
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = selectedColor;
+      ctx.lineWidth = lineWidth;
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!isDrawingRef.current) return;
+      if (!isDrawingRef.current || e.pointerId !== activePointerIdRef.current) {
+        return;
+      }
 
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -203,17 +282,27 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
       if (!ctx) return;
 
       const { x, y, pressure } = getPointerDetails(e);
-      const now = performance.now();
-
-      currentStrokeRef.current.push({ x, y, time: now, pressure });
 
       ctx.lineTo(x, y);
       ctx.stroke();
+
+      const now = performance.now();
+      if (
+        now - lastSampleTimeRef.current >= SAMPLE_INTERVAL_MS &&
+        totalPointCountRef.current < MAX_TOTAL_POINTS
+      ) {
+        currentStrokeRef.current.push({ x, y, t: now, pressure });
+        lastSampleTimeRef.current = now;
+        totalPointCountRef.current += 1;
+      }
     };
 
     const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!isDrawingRef.current) return;
+      if (!isDrawingRef.current || e.pointerId !== activePointerIdRef.current) {
+        return;
+      }
       isDrawingRef.current = false;
+      activePointerIdRef.current = null;
 
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -222,16 +311,18 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
 
       canvas.releasePointerCapture(e.pointerId);
       ctx.closePath();
-
+      
       strokeListRef.current.push({
-        tool: activeTool,
-        color: selectedColor,
-        lineWidth: activeTool === "eraser" ? eraserWidth : lineWidth,
+        strokeId: `stroke-${strokeListRef.current.length + 1}`,
+        pointerType: currentPointerTypeRef.current,
+        lineWidth,
         points: [...currentStrokeRef.current],
       });
 
       const currentState = ctx.getImageData(0, 0, canvas.width, canvas.height);
       historyRef.current.push(currentState);
+
+      onStrokeCountChange?.(strokeListRef.current.length);
     };
 
     return (

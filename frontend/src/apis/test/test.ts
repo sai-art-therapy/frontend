@@ -4,6 +4,10 @@ import type {
   PostTestResponse,
   ReportDetailResponse,
   ReportListItem,
+  UploadTestImageResponse,
+  AnalyzeTestResponse,
+  CanvasDrawingData,
+  CanvasDrawingUploadResponse,
 } from "../../types/test.type";
 
 export const postTest = async (data: PostTestRequest) => {
@@ -15,7 +19,7 @@ export const uploadTestImage = async (testId: number, file: File) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await axiosInstance.post<string>(
+  const response = await axiosInstance.post<UploadTestImageResponse>(
     `/tests/${testId}/image`,
     formData,
     {
@@ -28,11 +32,37 @@ export const uploadTestImage = async (testId: number, file: File) => {
 };
 
 export const analyzeTest = async (testId: number) => {
-  const response = await axiosInstance.post<string>(
+  const response = await axiosInstance.post<AnalyzeTestResponse>(
     `/tests/${testId}/analyze`,
     {},
     {
       timeout: 90000,
+    },
+  );
+  return response.data;
+};
+
+export const uploadCanvasDrawing = async (
+  testId: number,
+  file: File,
+  drawingData: CanvasDrawingData,
+) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append(
+    "drawing_data",
+    new Blob([JSON.stringify(drawingData)], { type: "application/json" }),
+    "drawing.json",
+  );
+
+  const response = await axiosInstance.post<CanvasDrawingUploadResponse>(
+    `/tests/${testId}/drawing`,
+    formData,
+    {
+      timeout: 60_000,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     },
   );
   return response.data;

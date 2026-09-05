@@ -6,6 +6,55 @@ export interface PostTestRequest {
 
 export type PostTestResponse = string;
 
+export type UploadTestImageResponse = Record<string, unknown>;
+export type AnalyzeTestResponse = Record<string, unknown>;
+
+export type DrawingPointerType = "pen" | "touch" | "mouse" | "unknown";
+export type DrawingPressureSource = "measured" | "unavailable";
+
+export interface DrawingPoint {
+  x: number; 
+  y: number; 
+  t_ms: number;
+  pressure?: number; 
+}
+
+export interface DrawingStroke {
+  stroke_id?: string;
+  pointer_type: DrawingPointerType;
+  pressure_source: DrawingPressureSource;
+  brush_width_px?: number;
+  points: DrawingPoint[];
+}
+
+export interface CanvasDrawingData {
+  schema_version: 1;
+  canvas: {
+    width: number;
+    height: number;
+  };
+  duration_ms: number;
+  strokes: DrawingStroke[];
+}
+
+export interface CanvasDrawingUploadResponse {
+  test_id: number;
+  drawing_id: number;
+  filename: string;
+  saved_path: string;
+  input_type: "canvas";
+  test_status: string;
+  pdi_status: string;
+  next_action: "analyze_image";
+  duration_ms: number;
+  drawing_time_minutes: number;
+  stroke_count: number;
+  point_count: number;
+  pressure_point_count: number;
+  pressure_available: boolean;
+  message: string;
+}
+
 export interface ChildProfile {
   child_id: number;
   name: string;
