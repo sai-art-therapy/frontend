@@ -25,7 +25,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <header
-      className={`flex items-center bg-white w-[402px] h-[68px] px-[16px] py-[20px] ${
+      className={`flex items-center bg-white w-full h-[68px] px-[16px] py-[20px] ${
         variant === "search" ? "justify-between" : ""
       }`}
     >

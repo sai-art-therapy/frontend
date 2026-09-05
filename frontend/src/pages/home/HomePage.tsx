@@ -81,6 +81,7 @@ const HomePage: React.FC = () => {
             buttonText={data.chatbot_card.button_text}
             child={data.chatbot_card.child}
             latestTest={data.chatbot_card.latest_test}
+            fallbackChildId={childId}
           />
 
           {hasHistory && (

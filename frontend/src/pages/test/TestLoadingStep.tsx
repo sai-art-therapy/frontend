@@ -15,15 +15,33 @@ const TestLoadingStep = () => {
   const childId = location.state?.childId;
   const imageFile = location.state?.imageFile;
   const imageUrl = location.state?.imageUrl;
-  // 직접 그리기는 duration_ms를 업로드 시점에 이미 서버에 저장했으므로
-  // 시간 입력 화면(/test-time-input-step)을 건너뛰고 바로 PDI로 이동한다.
   const drawingSource = location.state?.drawingSource;
 
   const [progress, setProgress] = useState(0);
   const [childName, setChildName] = useState("아이");
 
-  // React StrictMode에서 effect가 두 번 실행되어 분석 API가 중복 호출되는 것을 방지
   const hasStartedRef = useRef(false);
+
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
+
+  const startFakeProgress = () => {
+    progressIntervalRef.current = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) return prev;
+        const next = prev + (90 - prev) * 0.1;
+        return next >= 89.5 ? 90 : next;
+      });
+    }, 300);
+  };
+
+  const stopFakeProgress = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+  };
 
   const { data: childrenList } = useAppQuery(["children"], getChildren, {
     enabled: !!childId,
@@ -33,9 +51,7 @@ const TestLoadingStep = () => {
     (tId) => analyzeTest(tId),
     {
       onSuccess: () => {
-        // 분석 응답에는 이 단계의 report_id가 없다. 최종 리포트는 이후
-        // 단계(리포트 생성/목록 조회)에서 받은 ID를 사용해야 하므로 여기서는
-        // 응답에서 report_id를 꺼내 쓰지 않는다.
+        stopFakeProgress();
         setProgress(100);
 
         const nextPath =
@@ -56,6 +72,7 @@ const TestLoadingStep = () => {
         }, 800);
       },
       onError: (error) => {
+        stopFakeProgress();
         console.error("분석 요청 실패:", error);
         alert("이미지 분석을 시작하지 못했습니다. 다시 시도해 주세요.");
         navigate(-1);
@@ -74,13 +91,9 @@ const TestLoadingStep = () => {
     hasStartedRef.current = true;
 
     startAnalyze(Number(testId));
+    startFakeProgress();
 
-    const timer = setTimeout(() => {
-      setProgress(90);
-    }, 100);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => stopFakeProgress();
   }, [testId]);
 
   useEffect(() => {
@@ -132,10 +145,12 @@ const TestLoadingStep = () => {
         {/* 진행바 */}
         <div className="mt-[48px] h-[8px] w-[280px] overflow-hidden rounded-full bg-grey-200">
           <div
-            className="h-full bg-main-500 transition-all ease-out"
+            className="h-full bg-main-500 transition-all"
             style={{
               width: `${progress}%`,
-              transitionDuration: progress === 100 ? "500ms" : "30000ms",
+              transitionDuration: progress === 100 ? "500ms" : "300ms",
+              transitionTimingFunction:
+                progress === 100 ? "ease-out" : "linear",
             }}
           ></div>
         </div>

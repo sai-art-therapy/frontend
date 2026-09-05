@@ -661,7 +661,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
                   borderRadius: "4px",
                   background: "#F04438",
                   color: "#FFF",
-                  fontFamily: "Pretendard",
                   fontSize: "12px",
                   fontWeight: 600,
                   lineHeight: "16px",

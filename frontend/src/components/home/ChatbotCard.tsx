@@ -23,6 +23,9 @@ interface ChatbotCardProps {
     test_order: number;
     test_order_label: string;
   } | null;
+  // child/latestTest가 없을 때(완료된 검사가 없는 상태)도 일반 상담방을
+  // 만들 수 있도록, 홈에서 이미 불러온 자녀 ID를 대체로 받는다.
+  fallbackChildId?: number | null;
 }
 
 const ChatbotCard: React.FC<ChatbotCardProps> = ({
@@ -33,17 +36,23 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({
   buttonText,
   child,
   latestTest,
+  fallbackChildId,
 }) => {
   const navigate = useNavigate();
 
   const { mutate: startChatWithQuestion, isPending } = useAppMutation<
     any,
-    { child_id: number; htp_test_id: number; title: string; question: string }
+    {
+      child_id: number;
+      htp_test_id: number | null;
+      title: string;
+      question: string;
+    }
   >(
     (body) =>
       createChatSession({
         child_id: body.child_id,
-        htp_test_id: body.htp_test_id,
+        htp_test_id: body.htp_test_id as unknown as number,
         title: body.title,
       }),
     {
@@ -63,10 +72,11 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({
             : parsedResponse;
 
         if (createdRoomId) {
+          const isReportChat = !!variables.htp_test_id;
           navigate(`/chat/report/${createdRoomId}`, {
             state: {
-              hasReport: true,
-              reportId: variables.htp_test_id,
+              hasReport: isReportChat,
+              reportId: variables.htp_test_id || undefined,
               initialQuestion: variables.question,
             },
           });
@@ -88,16 +98,29 @@ const ChatbotCard: React.FC<ChatbotCardProps> = ({
   const handleQuestionClick = (question: string) => {
     if (isPending) return;
 
-    if (!child || !latestTest) {
+    if (child && latestTest) {
+      startChatWithQuestion({
+        child_id: child.child_id,
+        htp_test_id: latestTest.test_id,
+        title: `${child.name} 리포트 상담`,
+        question,
+      });
+      return;
+    }
+
+    // 완료된 검사가 아직 없는 상태 — 리포트 없이 이 질문으로 바로 새
+    // 상담방을 시작한다. 자녀 정보 자체가 전혀 없을 때만 선택 화면으로 보낸다.
+    const generalChildId = child?.child_id ?? fallbackChildId;
+    if (!generalChildId) {
       navigate("/chat/intro-step");
       return;
     }
 
     startChatWithQuestion({
-      child_id: child.child_id,
-      htp_test_id: latestTest.test_id,
-      title: `${child.name} 리포트 상담`,
-      question: question,
+      child_id: generalChildId,
+      htp_test_id: null,
+      title: "일반 육아 상담",
+      question,
     });
   };
 

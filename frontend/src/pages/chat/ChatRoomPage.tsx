@@ -449,9 +449,13 @@ const ChatRoomPage = () => {
   useEffect(() => {
     const initialQuestion = location.state?.initialQuestion;
 
-    if (initialQuestion && !hasAutoSent.current && currentReport) {
-      hasAutoSent.current = true;
+    if (
+      initialQuestion &&
+      !hasAutoSent.current &&
+      (currentReport || !hasReport)
+    ) {
       const timer = setTimeout(() => {
+        hasAutoSent.current = true;
         sendMessage(initialQuestion);
         navigate(location.pathname, {
           state: { ...location.state, initialQuestion: undefined },
@@ -460,7 +464,7 @@ const ChatRoomPage = () => {
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [location.state, currentReport, numericSessionId]);
+  }, [location.state, currentReport, numericSessionId, hasReport]);
 
   const handleSelectReport = (report: CurrentReportType) => {
     setIsBottomSheetOpen(false);
