@@ -6,25 +6,25 @@
 
 ## 팀원 및 역할
 
-| 이름 | 담당 |
-|------|------|
+| 이름   | 담당                                                                                                  |
+| ------ | ----------------------------------------------------------------------------------------------------- |
 | 이희원 | 전체 디자인 · 로그인/회원가입 UI 구현 및 디자인 디테일 수정 · 홈,마이페이지, 로그인/회원가입 API 연동 |
-| 박하은 | 홈,마이페이지,심리검사,AI 챗봇 UI 구현 · 심리검사,AI 챗봇 API 연동 |
+| 박하은 | 홈,마이페이지,심리검사,AI 챗봇 UI 구현 · 심리검사,AI 챗봇 API 연동                                    |
 
 ---
 
 ## 기술 스택
 
-| 항목 | 버전 |
-|------|------|
-| React | 19 |
-| TypeScript | 6 |
-| Vite | 8 |
-| React Router DOM | 7 |
-| TanStack React Query | 5 |
-| Tailwind CSS | 4 |
-| Axios | 1 |
-| html2canvas + jsPDF | — |
+| 항목                 | 버전 |
+| -------------------- | ---- |
+| React                | 19   |
+| TypeScript           | 6    |
+| Vite                 | 8    |
+| React Router DOM     | 7    |
+| TanStack React Query | 5    |
+| Tailwind CSS         | 4    |
+| Axios                | 1    |
+| html2canvas + jsPDF  | —    |
 
 ---
 
@@ -94,6 +94,7 @@ src/
 ## 주요 기능
 
 ### 인증 (Auth)
+
 - Google OAuth 로그인 (`/login` → 서버 `/auth/google` → `/auth/callback`)
 - JWT 액세스 토큰을 `localStorage`에 저장
 - `AuthContext`로 토큰 상태 전역 관리
@@ -102,6 +103,7 @@ src/
 - 회원가입 플로우: 약관 동의 → 프로필 입력 → 자녀 정보 등록
 
 ### 홈 (`/home`)
+
 - 서버에서 내려받은 헤드라인, 검사 카드, 챗봇 카드, 최근 리포트 카드를 렌더링
 - 검사 이력이 없을 때와 있을 때 UI를 다르게 표시
 
@@ -121,6 +123,7 @@ src/
 ```
 
 결과 리포트(`TestResult`)는 다음 기능을 제공합니다.
+
 - 집·사람·나무 탭 전환으로 영역별 소견 조회
 - YOLO 객체 감지 바운딩 박스 오버레이
 - AI 리포트 생성 폴링 (2초 간격, 최대 90초 대기)
@@ -129,11 +132,13 @@ src/
 - 공유 전용 뷰 (`/share/result`) — 비로그인 접근 가능, URL 파라미터로 데이터 수신
 
 ### AI 챗봇 (`/chat`)
+
 - 리포트 기반 또는 일반 육아 질문 상담
 - 서버에서 추천 질문(Suggested Prompts) 수신
 - 채팅 내역 조회 및 메시지 송수신
 
 ### 마이페이지 (`/mypage`)
+
 - 사용자 프로필 조회 및 수정
 - 자녀 등록·수정·추가
 - 사용 가이드, FAQ, 약관 및 정책 링크
@@ -180,19 +185,19 @@ RootLayout
 
 ## 공통 컴포넌트 (`src/components/common/`)
 
-| 컴포넌트 | 설명 |
-|----------|------|
-| `ActionButton` | 주요 CTA 버튼, variant(darkGrey, lightOrange 등) 지원 |
-| `BottomNavigation` | 홈·심리 검사·마이페이지 하단 탭 바 |
-| `BottomSheet` | 슬라이드 업 시트 |
-| `Chip` | 소형 레이블 칩 |
-| `Dropdown` | 드롭다운 선택 |
-| `FloatingButton` | 플로팅 액션 버튼 |
-| `Popup` | 확인/취소 다이얼로그 |
-| `SearchBar` | 검색 입력 필드 |
-| `Tag` | 태그 뱃지 |
-| `Textfield` | 폼 입력 필드 |
-| `TopBar` | 페이지 상단 헤더 |
+| 컴포넌트           | 설명                                                  |
+| ------------------ | ----------------------------------------------------- |
+| `ActionButton`     | 주요 CTA 버튼, variant(darkGrey, lightOrange 등) 지원 |
+| `BottomNavigation` | 홈·심리 검사·마이페이지 하단 탭 바                    |
+| `BottomSheet`      | 슬라이드 업 시트                                      |
+| `Chip`             | 소형 레이블 칩                                        |
+| `Dropdown`         | 드롭다운 선택                                         |
+| `FloatingButton`   | 플로팅 액션 버튼                                      |
+| `Popup`            | 확인/취소 다이얼로그                                  |
+| `SearchBar`        | 검색 입력 필드                                        |
+| `Tag`              | 태그 뱃지                                             |
+| `Textfield`        | 폼 입력 필드                                          |
+| `TopBar`           | 페이지 상단 헤더                                      |
 
 ---
 
@@ -202,7 +207,7 @@ RootLayout
 
 ```ts
 // GET 요청
-const { data, isLoading } = useAppQuery(['key'], fetchFn, options);
+const { data, isLoading } = useAppQuery(["key"], fetchFn, options);
 
 // POST/PUT/DELETE 요청
 const { mutate } = useAppMutation(mutationFn, { onSuccess, onError });
