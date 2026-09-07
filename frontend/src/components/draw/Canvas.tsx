@@ -192,8 +192,19 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
         const canvas = canvasRef.current;
         if (!canvas) return null;
 
+        const exportCanvas = document.createElement("canvas");
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+
+        const exportCtx = exportCanvas.getContext("2d");
+        if (!exportCtx) return null;
+
+        exportCtx.fillStyle = "#FFFFFF";
+        exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+        exportCtx.drawImage(canvas, 0, 0);
+
         return new Promise<File | null>((resolve) => {
-          canvas.toBlob((blob) => {
+          exportCanvas.toBlob((blob) => {
             if (!blob) {
               resolve(null);
               return;

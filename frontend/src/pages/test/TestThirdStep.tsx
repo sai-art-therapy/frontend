@@ -93,8 +93,6 @@ const TestThirdStep = () => {
   >(({ testId, file }) => uploadTestImage(testId, file), {
     onSuccess: async (_data, variables) => {
       const targetFile = variables.file;
-      // 백엔드 응답은 객체이며 브라우저에서 바로 쓸 이미지 URL을 주지 않으므로,
-      // 미리보기 화면에서 이미 만들어둔 previewUrl을 그대로 사용한다.
       const uploadedImageUrl = previewUrl;
 
       try {
