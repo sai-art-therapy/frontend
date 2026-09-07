@@ -149,6 +149,13 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
       return () => window.removeEventListener("resize", redrawAll);
     }, [redrawAll]);
 
+    const recountTotalPoints = () => {
+      totalPointCountRef.current = strokeListRef.current.reduce(
+        (sum, stroke) => sum + stroke.points.length,
+        0,
+      );
+    };
+
     // Imperative API!!
     useImperativeHandle(ref, () => ({
       undo: () => {
@@ -163,6 +170,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
           if (strokeListRef.current.length > 0) {
             strokeListRef.current.pop();
           }
+          recountTotalPoints();
 
           const previousState =
             historyRef.current[historyRef.current.length - 1];
@@ -185,6 +193,7 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
           ctx.getImageData(0, 0, canvas.width, canvas.height),
         ];
         strokeListRef.current = [];
+        recountTotalPoints();
 
         onStrokeCountChange?.(0);
       },
