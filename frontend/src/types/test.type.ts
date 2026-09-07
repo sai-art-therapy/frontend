@@ -13,10 +13,10 @@ export type DrawingPointerType = "pen" | "touch" | "mouse" | "unknown";
 export type DrawingPressureSource = "measured" | "unavailable";
 
 export interface DrawingPoint {
-  x: number; 
-  y: number; 
+  x: number;
+  y: number;
   t_ms: number;
-  pressure?: number; 
+  pressure?: number;
 }
 
 export interface DrawingStroke {
@@ -122,6 +122,8 @@ export interface ReportDetailResponse {
   images: {
     original_image_path: string;
     result_image_path: string;
+    original_image_url: string | null;
+    result_image_url: string | null;
   };
   test_result_images?: {
     all: string;
@@ -141,6 +143,51 @@ export interface ReportDetailResponse {
       };
     };
   };
+}
+
+export interface CreateShareResponse {
+  share_token: string;
+  token_type?: string;
+  expires_at?: string;
+}
+
+export interface SharedReportChild {
+  name: string;
+  age: number;
+  gender: "male" | "female";
+}
+
+export interface SharedReportImages {
+  original_image_url: string | null;
+  result_image_url: string | null;
+}
+
+export interface SharedReportData {
+  test?: {
+    test_date?: string;
+    test_date_label?: string;
+  };
+  child: SharedReportChild;
+  summary?: SummaryInfo;
+  tabs?: {
+    house?: TabDetail;
+    tree?: TabDetail;
+    person?: TabDetail;
+  };
+  relationship_analysis?: {
+    observations: string[];
+    interpretation: string;
+  };
+  recommendations?: RecommendationItem[];
+  safety_notice?: string;
+  images: SharedReportImages;
+}
+
+export interface SharedReportResponse {
+  share: {
+    expires_at: string;
+  };
+  report: SharedReportData;
 }
 
 export interface ReportListItem {

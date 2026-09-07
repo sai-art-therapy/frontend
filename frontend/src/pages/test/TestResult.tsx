@@ -6,11 +6,19 @@ import {
   getReportDetail,
   getReports,
   generateReport,
+  getReportImage,
 } from "../../apis/test/test";
 import { createChatSession } from "../../apis/chat/chat";
+import {
+  createShareToken,
+  getSharedReport,
+  getSharedReportImage,
+} from "../../apis/share/share";
+import { shareTokenStorage } from "../../apis/shareAxiosInstance";
 import type {
   ReportListItem,
   ReportDetailResponse,
+  SharedReportResponse,
 } from "../../types/test.type";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -38,27 +46,6 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
   const searchParams = new URLSearchParams(location.search);
   const queryReportId = searchParams.get("reportId");
   const queryTestId = searchParams.get("testId");
-
-  const queryChildName = searchParams.get("childName") || "아이";
-  const queryAge = searchParams.get("age") || "";
-  const queryGender = searchParams.get("gender") || "";
-  const queryTestDate = searchParams.get("testDate") || "";
-  const querySummary =
-    searchParams.get("summary") ||
-    "그림 전반에 안정감과 현실 접촉이 잘 표현되었습니다.";
-  const queryImg = searchParams.get("img") || "";
-  const queryHouseInterp =
-    searchParams.get("houseInterp") || "해석 정보가 없습니다.";
-  const queryPersonInterp =
-    searchParams.get("personInterp") || "해석 정보가 없습니다.";
-  const queryTreeInterp =
-    searchParams.get("treeInterp") || "해석 정보가 없습니다.";
-  const queryHouseStatus = searchParams.get("houseStatus") || "보통";
-  const queryPersonStatus = searchParams.get("personStatus") || "보통";
-  const queryTreeStatus = searchParams.get("treeStatus") || "보통";
-  const queryRecoms = searchParams.get("recoms")
-    ? JSON.parse(decodeURIComponent(searchParams.get("recoms")!))
-    : [];
 
   const stateReportId =
     location.state?.reportId ??
@@ -103,6 +90,47 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
       setResolvedReportId(currentTargetId);
     }
   }, [stateReportId, queryReportId, resolvedReportId]);
+
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [isShareTokenReady, setIsShareTokenReady] = useState(false);
+
+  useEffect(() => {
+    if (!isSharedView) return;
+
+    const match = window.location.hash.match(/token=([^&]+)/);
+    const tokenFromUrl = match ? decodeURIComponent(match[1]) : null;
+
+    if (tokenFromUrl) {
+      shareTokenStorage.set(tokenFromUrl);
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search,
+      );
+    }
+
+    setShareToken(tokenFromUrl || shareTokenStorage.get());
+    setIsShareTokenReady(true);
+  }, [isSharedView]);
+
+  const {
+    data: sharedReportData,
+    isLoading: isSharedReportLoading,
+    isError: isSharedReportError,
+  } = useAppQuery<SharedReportResponse>(
+    ["sharedReport", shareToken],
+    getSharedReport,
+    {
+      enabled: isSharedView && isShareTokenReady && !!shareToken,
+      retry: false,
+    },
+  );
+
+  const sharedReport = sharedReportData?.report;
+  const isShareInvalid =
+    isSharedView &&
+    isShareTokenReady &&
+    (!shareToken || isSharedReportError);
 
   useEffect(() => {
     if (isSharedView) return;
@@ -174,6 +202,42 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     }
   }, [isError, error]);
 
+  const [fetchedImageUrl, setFetchedImageUrl] = useState<string | null>(null);
+  const originalImageApiPath = isSharedView
+    ? (sharedReport?.images?.original_image_url ?? null)
+    : (reportData?.images?.original_image_url ?? null);
+
+  useEffect(() => {
+    if (!originalImageApiPath) {
+      setFetchedImageUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    const fetchImage = isSharedView
+      ? getSharedReportImage(originalImageApiPath)
+      : getReportImage(originalImageApiPath);
+
+    fetchImage
+      .then((blob) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setFetchedImageUrl(objectUrl);
+      })
+      .catch((err) => {
+        console.warn("⚠️ 원본 이미지 조회 실패:", err);
+      });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [originalImageApiPath, isSharedView]);
+
   const handleImageLoad = (e: SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
     const { naturalWidth, naturalHeight, width, height } = img;
@@ -219,110 +283,51 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
   const reportAny = reportData as any;
 
   const childName = isSharedView
-    ? queryChildName
+    ? sharedReport?.child?.name || "아이"
     : reportData?.child?.name || "아이";
 
   const age = isSharedView
-    ? queryAge
-      ? queryAge.startsWith("만")
-        ? queryAge
-        : `만 ${queryAge}세`
+    ? sharedReport?.child?.age !== undefined
+      ? `만 ${sharedReport.child.age}세`
       : ""
     : reportData?.child?.age
       ? `만 ${reportData.child.age}세`
       : "";
 
-  const gender = isSharedView
-    ? queryGender === "male" || queryGender === "남아"
-      ? "남아"
-      : queryGender === "female" || queryGender === "여아"
-        ? "여아"
-        : ""
-    : reportData?.child?.gender === "male"
-      ? "남아"
-      : reportData?.child?.gender === "female"
-        ? "여아"
-        : "";
+  const genderCode = isSharedView
+    ? sharedReport?.child?.gender
+    : reportData?.child?.gender;
+  const gender =
+    genderCode === "male" ? "남아" : genderCode === "female" ? "여아" : "";
 
-  const rawDate = reportData?.test?.test_date;
-  const testDate = isSharedView
-    ? queryTestDate
-    : rawDate
-      ? `${rawDate.split("T")[0].replace(/-/g, ".")} 검사`
-      : reportData?.test?.test_date_label || "";
+  const rawDate = isSharedView
+    ? sharedReport?.test?.test_date
+    : reportData?.test?.test_date;
+  const testDateLabel = isSharedView
+    ? sharedReport?.test?.test_date_label
+    : reportData?.test?.test_date_label;
+  const testDate = rawDate
+    ? `${rawDate.split("T")[0].replace(/-/g, ".")} 검사`
+    : testDateLabel || "";
 
   const summaryText = isSharedView
-    ? querySummary
+    ? sharedReport?.summary?.one_line_summary ||
+      "그림 전반에 안정감과 현실 접촉이 잘 표현되었습니다."
     : reportData?.summary?.one_line_summary ||
       "그림 전반에 안정감과 현실 접촉이 잘 표현되었습니다.";
 
   const activeTabContent = isSharedView
-    ? {
-        interpretation:
-          currentKey === "house"
-            ? queryHouseInterp
-            : currentKey === "person"
-              ? queryPersonInterp
-              : queryTreeInterp,
-        status:
-          currentKey === "house"
-            ? queryHouseStatus
-            : currentKey === "person"
-              ? queryPersonStatus
-              : queryTreeStatus,
-        tags: [],
-        observations: [],
-        positive_note: "",
-      }
+    ? sharedReport?.tabs?.[currentKey]
     : reportData?.tabs?.[currentKey];
 
-  const serverBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const fallbackImageUrl = "https://placehold.co/370x200?text=No+Image";
 
-  const rawImgPath = isSharedView
-    ? queryImg
-    : reportData?.images?.original_image_path ||
-      reportData?.images?.result_image_path ||
-      reportData?.test?.original_image_path ||
-      reportData?.test?.result_image_path ||
-      reportData?.test_result_images?.[
-        currentKey === "house"
-          ? "house"
-          : currentKey === "person"
-            ? "person"
-            : "tree"
-      ] ||
-      reportAny?.analysis?.yolo_result_json?.result_image_paths?.[currentKey];
-
   const imageUrl = (() => {
-    const localFallback = localImageUrl || fallbackImageUrl;
-
-    if (isSharedView) {
-      return rawImgPath && !rawImgPath.includes("Not Found")
-        ? rawImgPath
-        : fallbackImageUrl;
+    if (fetchedImageUrl) {
+      return fetchedImageUrl;
     }
 
-    if (
-      rawImgPath &&
-      rawImgPath !== "undefined" &&
-      !rawImgPath.includes("Not Found")
-    ) {
-      if (
-        rawImgPath.startsWith("http://") ||
-        rawImgPath.startsWith("https://")
-      ) {
-        return rawImgPath;
-      }
-
-      const baseUrl = serverBaseUrl ? serverBaseUrl.replace(/\/$/, "") : "";
-      const cleanPath = rawImgPath.startsWith("/")
-        ? rawImgPath
-        : `/${rawImgPath}`;
-      return baseUrl ? `${baseUrl}${cleanPath}` : localFallback;
-    }
-
-    return localFallback;
+    return localImageUrl || fallbackImageUrl;
   })();
 
   const detections = isSharedView
@@ -331,10 +336,14 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
   const currentDetection = detections.find((d: any) => d.type === currentKey);
 
   const recommendations = isSharedView
-    ? queryRecoms
+    ? sharedReport?.recommendations || []
     : reportData?.recommendations && reportData.recommendations.length > 0
       ? reportData.recommendations
       : [];
+
+  const safetyNotice = isSharedView
+    ? sharedReport?.safety_notice
+    : reportData?.safety_notice;
 
   const handleGoToChat = async () => {
     if (!resolvedReportId) {
@@ -383,35 +392,21 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
   };
 
   const handleShare = async () => {
-    if (!isSharedView && !resolvedReportId) {
+    if (!resolvedReportId) {
       alert("리포트 생성 완료 후 공유가 가능합니다.");
       return;
     }
 
-    const currentReportId = isSharedView ? queryReportId : resolvedReportId;
-    const currentTestId = isSharedView ? queryTestId : testId;
+    let fullShareUrl: string;
+    try {
+      const { share_token } = await createShareToken(resolvedReportId);
+      fullShareUrl = `${window.location.origin}/share/result#token=${share_token}`;
+    } catch (err) {
+      console.error("❌ 공유 링크 생성 실패:", err);
+      alert("공유 링크 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
 
-    const baseShareUrl = `${window.location.origin}/share/result`;
-    const params = new URLSearchParams({
-      reportId: String(currentReportId),
-      testId: currentTestId ? String(currentTestId) : "",
-      childName,
-      age,
-      gender: reportData?.child?.gender || searchParams.get("gender") || "",
-      testDate,
-      summary: summaryText,
-      img: imageUrl,
-      houseInterp: reportData?.tabs?.house?.interpretation || queryHouseInterp,
-      personInterp:
-        reportData?.tabs?.person?.interpretation || queryPersonInterp,
-      treeInterp: reportData?.tabs?.tree?.interpretation || queryTreeInterp,
-      houseStatus: reportData?.tabs?.house?.status || queryHouseStatus,
-      personStatus: reportData?.tabs?.person?.status || queryPersonStatus,
-      treeStatus: reportData?.tabs?.tree?.status || queryTreeStatus,
-      recoms: encodeURIComponent(JSON.stringify(recommendations)),
-    });
-
-    const fullShareUrl = `${baseShareUrl}?${params.toString()}`;
     const shareData = {
       title: `${childName}의 마음 이야기 리포트`,
       text: "우리 아이의 심리 분석 결과를 확인해 보세요!",
@@ -515,7 +510,22 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
     );
   }
 
-  if (isDetailLoading) {
+  if (isShareInvalid) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-white font-sans">
+        <div className="flex flex-col items-center gap-4 px-[24px] text-center">
+          <p className="text-[17px] font-semibold text-grey-900">
+            공유 링크가 만료되었거나 유효하지 않습니다.
+          </p>
+          <p className="text-[13px] text-grey-400">
+            링크를 다시 요청하거나 리포트 소유자에게 문의해 주세요.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isDetailLoading || (isSharedView && isSharedReportLoading)) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center bg-white font-sans text-grey-600">
         <div className="flex flex-col items-center gap-4">
@@ -552,8 +562,7 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
         <div className="mt-[4px] flex w-full items-center gap-[10px] rounded-[8px] bg-warning-100 p-[8px]">
           <img src={referIcon} alt="참고" className="h-[24px] w-[24px]" />
           <p className="text-[13px] font-normal leading-[18px] tracking-[-0.08px] text-grey-900">
-            {reportData?.safety_notice ||
-              "본 결과는 참고용이며 전문 진단을 대체하지 않습니다."}
+            {safetyNotice || "본 결과는 참고용이며 전문 진단을 대체하지 않습니다."}
           </p>
         </div>
 
@@ -840,15 +849,17 @@ const TestResult = ({ isSharedView = false }: TestResultProps) => {
         )}
 
         <div className="mb-[40px] mt-[16px] flex w-full items-center gap-[14px]">
-          <button
-            onClick={handleShare}
-            className="flex h-[42px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200"
-          >
-            <img src={shareIcon} alt="공유" className="h-[24px] w-[24px]" />
-            <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-sub-500">
-              공유하기
-            </span>
-          </button>
+          {!isSharedView && (
+            <button
+              onClick={handleShare}
+              className="flex h-[42px] flex-1 cursor-pointer items-center justify-center gap-[6px] rounded-[8px] bg-sub-100 transition-colors active:bg-sub-200"
+            >
+              <img src={shareIcon} alt="공유" className="h-[24px] w-[24px]" />
+              <span className="text-[15px] font-semibold leading-[20px] tracking-[-0.24px] text-sub-500">
+                공유하기
+              </span>
+            </button>
+          )}
 
           <button
             onClick={handleDownloadPdf}
