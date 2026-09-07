@@ -158,6 +158,16 @@ export const getReportDetail = async (reportId: number) => {
   return response.data;
 };
 
+// images.original_image_url / result_image_url에 담겨오는 경로를 그대로 받아
+// 호출한다. 이 엔드포인트는 바이너리 이미지를 직접 반환하고 인증이 필요해서
+// <img src="...">에 바로 못 쓰고, blob으로 받아 objectURL로 변환해야 한다.
+export const getReportImage = async (imagePath: string) => {
+  const response = await axiosInstance.get<Blob>(imagePath, {
+    responseType: "blob",
+  });
+  return response.data;
+};
+
 export const generateReport = async (testId: number) => {
   const response = await axiosInstance.post<string>(
     `/tests/${testId}/generate-report`,
