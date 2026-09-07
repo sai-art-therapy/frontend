@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 import { TopBar } from "../../components/common/TopBar";
 import { DrawingToolbar } from "../../components/draw/DrawingToolbar";
-import type { ToolType } from "../../components/draw/DrawingToolbar";
 import { ColorPicker, PALETTE_COLORS } from "../../components/draw/ColorPicker";
 import { Canvas } from "../../components/draw/Canvas";
 import type { CanvasRef } from "../../components/draw/Canvas";
@@ -25,7 +24,6 @@ const TestDrawingStep = () => {
 
   const canvasRef = useRef<CanvasRef>(null);
 
-  const [activeTool, setActiveTool] = useState<ToolType>("pen");
   const [selectedColor, setSelectedColor] = useState<string>(PALETTE_COLORS[0]);
   const [strokeCount, setStrokeCount] = useState(0);
 
@@ -88,6 +86,11 @@ const TestDrawingStep = () => {
     canvasRef.current?.undo();
   };
 
+  const handleClearAll = () => {
+    if (isPending) return;
+    canvasRef.current?.clear();
+  };
+
   const handleComplete = async () => {
     if (!testId) {
       alert("검사 정보가 누락되었습니다. 첫 페이지부터 다시 진행해 주세요.");
@@ -118,9 +121,10 @@ const TestDrawingStep = () => {
       />
 
       <DrawingToolbar
-        activeTool={activeTool}
-        onSelectTool={setActiveTool}
         onUndo={handleUndo}
+        onClearAll={handleClearAll}
+        canUndo={strokeCount > 0 && !isPending}
+        canClearAll={strokeCount > 0 && !isPending}
       />
 
       <div className="mt-[15px]">
@@ -130,7 +134,6 @@ const TestDrawingStep = () => {
       <div className="relative w-full flex-1">
         <Canvas
           ref={canvasRef}
-          activeTool={activeTool}
           selectedColor={selectedColor}
           onStrokeCountChange={setStrokeCount}
         />

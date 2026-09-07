@@ -5,7 +5,6 @@ import React, {
   forwardRef,
   useCallback,
 } from "react";
-import type { ToolType } from "./DrawingToolbar";
 import type {
   CanvasDrawingData,
   DrawingPoint,
@@ -27,7 +26,6 @@ interface InternalStrokePoint {
 
 interface InternalStroke {
   strokeId: string;
-  tool: ToolType;
   pointerType: DrawingPointerType;
   lineWidth: number;
   points: InternalStrokePoint[];
@@ -41,18 +39,13 @@ export interface CanvasRef {
 }
 
 interface CanvasProps {
-  activeTool: ToolType;
   selectedColor: string;
   lineWidth?: number;
-  eraserWidth?: number;
   onStrokeCountChange?: (count: number) => void;
 }
 
 export const Canvas = forwardRef<CanvasRef, CanvasProps>(
-  (
-    { activeTool, selectedColor, lineWidth = 4, eraserWidth = 20, onStrokeCountChange },
-    ref,
-  ) => {
+  ({ selectedColor, lineWidth = 4, onStrokeCountChange }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const isDrawingRef = useRef<boolean>(false);
     const activePointerIdRef = useRef<number | null>(null);
@@ -187,9 +180,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
         const sessionStart = sessionStartRef.current ?? now;
         const durationMs = Math.max(1, Math.round(now - sessionStart));
 
-        const strokes: DrawingStroke[] = strokeListRef.current
-          .filter((stroke) => stroke.tool === "pen")
-          .map((stroke) => {
+        const strokes: DrawingStroke[] = strokeListRef.current.map(
+          (stroke) => {
             const distinctPressures = new Set(
               stroke.points.map((p) => p.pressure),
             );
@@ -275,14 +267,9 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
       ctx.beginPath();
       ctx.moveTo(x, y);
 
-      if (activeTool === "eraser") {
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = eraserWidth;
-      } else {
-        ctx.globalCompositeOperation = "source-over";
-        ctx.strokeStyle = selectedColor;
-        ctx.lineWidth = lineWidth;
-      }
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = selectedColor;
+      ctx.lineWidth = lineWidth;
     };
 
     const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -328,9 +315,8 @@ export const Canvas = forwardRef<CanvasRef, CanvasProps>(
       
       strokeListRef.current.push({
         strokeId: `stroke-${strokeListRef.current.length + 1}`,
-        tool: activeTool,
         pointerType: currentPointerTypeRef.current,
-        lineWidth: activeTool === "eraser" ? eraserWidth : lineWidth,
+        lineWidth,
         points: [...currentStrokeRef.current],
       });
 
